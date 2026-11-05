@@ -8,7 +8,8 @@ namespace HubPedidos.Domain.Pedidos;
 /// </summary>
 /// <remarks>
 /// O construtor é a fronteira que impede identificadores, quantidades e preços
-/// inválidos. Neste roteiro o pedido não muda de estado depois de criado.
+/// inválidos. Itens e totais nunca mudam depois da criação; a única mudança de estado
+/// (Roteiro 3) é a <see cref="Situacao"/>, sempre por método que protege a regra.
 /// </remarks>
 public sealed class Pedido
 {
@@ -17,7 +18,14 @@ public sealed class Pedido
 
     private readonly ReadOnlyCollection<ItemPedido> _itens;
 
-    public Pedido(PedidoId id, string clienteId, Regiao regiao, Prioridade prioridade, IEnumerable<ItemPedido> itens)
+    public Pedido(
+        PedidoId id,
+        string clienteId,
+        Regiao regiao,
+        Prioridade prioridade,
+        IEnumerable<ItemPedido> itens,
+        EnderecoEntrega? endereco = null,
+        DateTime? criadoEmUtc = null)
     {
         if (!id.EhValido)
         {
@@ -62,10 +70,52 @@ public sealed class Pedido
         Regiao = regiao;
         Prioridade = prioridade;
         _itens = Array.AsReadOnly(copia);
+        Endereco = endereco;
+        CriadoEmUtc = DateTime.SpecifyKind(criadoEmUtc ?? DateTime.UtcNow, DateTimeKind.Utc);
+        Situacao = SituacaoPedido.Recebido;
 
-        // O pedido é imutável neste roteiro, então os totais são calculados uma vez.
+        // Os itens não mudam depois da criação, então os totais são calculados uma vez.
         ValorTotal = copia.Sum(item => item.Subtotal);
         QuantidadeDeItens = copia.Sum(item => item.Quantidade);
+    }
+
+    /// <summary>
+    /// Recria um pedido já persistido. Passa pelo construtor (as invariantes continuam
+    /// valendo) e só então aplica a situação registrada.
+    /// </summary>
+    public static Pedido Reconstituir(
+        PedidoId id,
+        string clienteId,
+        Regiao regiao,
+        Prioridade prioridade,
+        IEnumerable<ItemPedido> itens,
+        EnderecoEntrega? endereco,
+        DateTime criadoEmUtc,
+        SituacaoPedido situacao)
+    {
+        if (!Enum.IsDefined(situacao))
+        {
+            throw new ArgumentOutOfRangeException(nameof(situacao), "Situação desconhecida.");
+        }
+
+        return new Pedido(id, clienteId, regiao, prioridade, itens, endereco, criadoEmUtc) { Situacao = situacao };
+    }
+
+    public EnderecoEntrega? Endereco { get; }
+
+    public DateTime CriadoEmUtc { get; }
+
+    public SituacaoPedido Situacao { get; private set; }
+
+    /// <summary>Somente um pedido recebido (ainda não processado) pode ser cancelado.</summary>
+    public void Cancelar()
+    {
+        if (Situacao != SituacaoPedido.Recebido)
+        {
+            throw new InvalidOperationException($"Um pedido na situação '{Situacao}' não pode ser cancelado.");
+        }
+
+        Situacao = SituacaoPedido.Cancelado;
     }
 
     public PedidoId Id { get; }

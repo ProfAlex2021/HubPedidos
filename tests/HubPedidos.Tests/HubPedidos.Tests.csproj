@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\HubPedidos.Domain\HubPedidos.Domain.csproj" />
     <ProjectReference Include="..\..\src\HubPedidos.Application\HubPedidos.Application.csproj" />
+    <ProjectReference Include="..\..\src\HubPedidos.Infrastructure\HubPedidos.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\HubPedidos.Api\HubPedidos.Api.csproj" />
   </ItemGroup>
 </Project>

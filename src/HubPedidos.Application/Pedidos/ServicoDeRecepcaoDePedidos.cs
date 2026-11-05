@@ -11,8 +11,15 @@ public abstract record ResultadoDaRecepcao
     {
     }
 
-    /// <summary>Pedido válido, classificado e processado.</summary>
-    public sealed record Aceito(PedidoResponse Pedido) : ResultadoDaRecepcao;
+    /// <summary>
+    /// Pedido válido, classificado e processado. Além do DTO, carrega as decisões
+    /// tomadas (Roteiro 3) para que a camada de persistência possa gravá-las.
+    /// </summary>
+    public sealed record Aceito(
+        PedidoResponse Pedido,
+        Domain.Pedidos.Pedido Entidade,
+        ResultadoClassificacao Classificacao,
+        ResultadoProcessamento Processamento) : ResultadoDaRecepcao;
 
     /// <summary>O DTO foi rejeitado antes de qualquer objeto de domínio ser criado.</summary>
     public sealed record DadosInvalidos(IReadOnlyList<ErroDeValidacao> Erros) : ResultadoDaRecepcao;
@@ -48,6 +55,10 @@ public sealed class ServicoDeRecepcaoDePedidos(CatalogoDeProcessadores catalogo,
         }
 
         var processamento = entrada.Instancia.Processar(pedido);
-        return new ResultadoDaRecepcao.Aceito(MapeadorDePedido.ParaResposta(pedido, classificacao, processamento));
+        return new ResultadoDaRecepcao.Aceito(
+            MapeadorDePedido.ParaResposta(pedido, classificacao, processamento),
+            pedido,
+            classificacao,
+            processamento);
     }
 }

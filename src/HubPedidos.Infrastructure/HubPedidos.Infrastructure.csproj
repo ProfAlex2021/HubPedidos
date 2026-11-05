@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Infraestrutura: persistência com EF Core + SQLite. O domínio não referencia este
+    projeto; é aqui que os tipos do domínio são convertidos para modelos relacionais.
+  -->
+  <PropertyGroup>
+    <RootNamespace>HubPedidos.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- Necessário apenas para "dotnet ef migrations"; não vai para a saída da API. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HubPedidos.Application\HubPedidos.Application.csproj" />
+  </ItemGroup>
+</Project>

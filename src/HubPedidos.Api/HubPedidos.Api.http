@@ -83,3 +83,37 @@ Content-Type: application/json
   "prioridade": "5",
   "itens": [ { "sku": "", "quantidade": 0, "precoUnitario": 10.999 } ]
 }
+
+### Roteiro 3 - pré-requisito: scripts/configurar-desenvolvimento.ps1 e, opcionalmente,
+### dotnet run --project src/HubPedidos.Api -- --semear 5000 --somente-preparar-banco
+
+### Roteiro 3 - criar pedido com endereço (tipo complexo) -> 201 + Location
+# @name criado
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-r3",
+  "regiao": "Sul",
+  "prioridade": "Normal",
+  "itens": [ { "sku": "CADERNO", "quantidade": 2, "precoUnitario": 10.50 } ],
+  "endereco": { "logradouro": "Rua A, 10", "cidade": "Curitiba", "uf": "PR", "cep": "80000000" }
+}
+
+### Roteiro 3 - detalhe com itens em uma consulta (consulta compilada)
+GET {{HubPedidos_HostAddress}}/api/pedidos/{{criado.response.body.$.id}}
+
+### Roteiro 3 - painel: filtros + ordenação determinística + paginação + total
+GET {{HubPedidos_HostAddress}}/api/pedidos?pagina=2&tamanho=10&categoria=Padrao&valorMinimo=100
+
+### Roteiro 3 - extensão: paginação por cursor (use "proximoCursor" da resposta em ?apos=)
+GET {{HubPedidos_HostAddress}}/api/pedidos/cursor?tamanho=10
+
+### Roteiro 3 - relatório de pedidos e itens sem N+1 (Projecao | Include | Dividida)
+GET {{HubPedidos_HostAddress}}/api/relatorios/pedidos?pagina=1&tamanho=20&estrategia=Dividida
+
+### Roteiro 3 - atualização com tracking: 204 na primeira vez, 409 na segunda
+POST {{HubPedidos_HostAddress}}/api/pedidos/{{criado.response.body.$.id}}/cancelamento
+
+### Roteiro 3 - identificador inválido -> 400 (TryParse do PedidoId)
+GET {{HubPedidos_HostAddress}}/api/pedidos/nao-e-um-guid

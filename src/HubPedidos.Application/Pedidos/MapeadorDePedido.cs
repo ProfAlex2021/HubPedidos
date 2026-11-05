@@ -54,6 +54,11 @@ public static class MapeadorDePedido
             }
         }
 
+        if (requisicao.Endereco is { } endereco)
+        {
+            ValidarEndereco(endereco, erros);
+        }
+
         if (erros.Count > 0 || !regiaoValida || !prioridadeValida)
         {
             return ResultadoDeMapeamento<Pedido>.Falha(erros);
@@ -65,8 +70,35 @@ public static class MapeadorDePedido
             .Select(item => new ItemPedido(item.Sku!, item.Quantidade, item.PrecoUnitario))
             .ToArray();
 
-        var pedido = new Pedido(idGerado, requisicao.ClienteId!, regiao, prioridade, itensDoDominio);
+        var enderecoDoDominio = requisicao.Endereco is { } e
+            ? new EnderecoEntrega(e.Logradouro, e.Cidade!, e.Uf!, e.Cep!)
+            : null;
+
+        var pedido = new Pedido(idGerado, requisicao.ClienteId!, regiao, prioridade, itensDoDominio, enderecoDoDominio);
         return ResultadoDeMapeamento<Pedido>.Ok(pedido);
+    }
+
+    private static void ValidarEndereco(EnderecoRequest endereco, List<ErroDeValidacao> erros)
+    {
+        if (endereco.Logradouro is { } logradouro && logradouro.Trim().Length > EnderecoEntrega.TamanhoMaximoLogradouro)
+        {
+            erros.Add(new("endereco.logradouro", $"O logradouro deve ter no máximo {EnderecoEntrega.TamanhoMaximoLogradouro} caracteres."));
+        }
+
+        if (string.IsNullOrWhiteSpace(endereco.Cidade) || endereco.Cidade.Trim().Length > EnderecoEntrega.TamanhoMaximoCidade)
+        {
+            erros.Add(new("endereco.cidade", $"A cidade deve ter entre 1 e {EnderecoEntrega.TamanhoMaximoCidade} caracteres."));
+        }
+
+        if (!EnderecoEntrega.UfEhValida(endereco.Uf))
+        {
+            erros.Add(new("endereco.uf", "UF inválida."));
+        }
+
+        if (!EnderecoEntrega.CepEhValido(endereco.Cep))
+        {
+            erros.Add(new("endereco.cep", "O CEP deve ter 8 dígitos, sem traço."));
+        }
     }
 
     /// <summary>
@@ -101,6 +133,9 @@ public static class MapeadorDePedido
             ValorTotal = pedido.ValorTotal,
             QuantidadeDeItens = pedido.QuantidadeDeItens,
             Itens = Array.AsReadOnly(itens),
+            Situacao = pedido.Situacao.ToString(),
+            CriadoEmUtc = pedido.CriadoEmUtc,
+            Endereco = pedido.Endereco is { } e ? new EnderecoResponse(e.Logradouro, e.Cidade, e.Uf, e.Cep) : null,
         };
     }
 

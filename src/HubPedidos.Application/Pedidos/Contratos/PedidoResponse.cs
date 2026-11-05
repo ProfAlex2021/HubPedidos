@@ -32,7 +32,19 @@ public sealed record PedidoResponse
 
     /// <summary>Snapshot somente leitura criado pelo mapeador; nunca a coleção da entidade.</summary>
     public IReadOnlyList<ItemPedidoResponse> Itens { get; init; } = [];
+
+    /// <summary>Roteiro 3: situação persistida (Recebido, Cancelado).</summary>
+    public string Situacao { get; init; } = "Recebido";
+
+    /// <summary>Roteiro 3: instante de criação em UTC.</summary>
+    public DateTime CriadoEmUtc { get; init; }
+
+    /// <summary>Roteiro 3: endereço de entrega, quando informado.</summary>
+    public EnderecoResponse? Endereco { get; init; }
 }
 
 /// <summary>Item na resposta, já com o subtotal calculado.</summary>
 public sealed record ItemPedidoResponse(string Sku, int Quantidade, decimal PrecoUnitario, decimal Subtotal);
+
+/// <summary>Endereço na resposta.</summary>
+public sealed record EnderecoResponse(string? Logradouro, string Cidade, string Uf, string Cep);

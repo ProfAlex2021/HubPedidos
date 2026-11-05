@@ -480,3 +480,9 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Banco SQLite local de desenvolvimento (criado por scripts/configurar-desenvolvimento.ps1)
+dados/
+*.db
+*.db-shm
+*.db-wal

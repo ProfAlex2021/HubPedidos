@@ -18,6 +18,13 @@ public enum Prioridade
     Urgente = 3,
 }
 
+/// <summary>Ciclo de vida do pedido.</summary>
+public enum SituacaoPedido
+{
+    Recebido = 1,
+    Cancelado = 2,
+}
+
 /// <summary>
 /// Categoria de processamento produzida pela classificação.
 /// <see cref="Invalida"/> existe para que dados inválidos tenham um resultado

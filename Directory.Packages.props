@@ -13,5 +13,11 @@
     <PackageVersion Include="MSTest" Version="4.5.1" />
     <!-- Roteiro 2: medições (mesma versão usada no livro-texto; publicada em 30/11/2025). -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    <!--
+      Roteiro 3: EF Core 10 com SQLite. 10.0.13 (13/10/2026) é o último patch da linha 10.0
+      com pelo menos duas semanas de publicação (10.0.14 saiu em 25/10/2026).
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
   </ItemGroup>
 </Project>

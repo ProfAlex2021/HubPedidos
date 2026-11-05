@@ -38,15 +38,22 @@ public sealed class ServicoDeRecepcaoDePedidosTestes
     }
 
     [TestMethod]
-    public void Endpoint_traduz_resultados_para_respostas_tipadas()
+    public async Task Endpoint_traduz_resultados_para_respostas_tipadas()
     {
-        var valido = PedidosEndpoints.ReceberPedido(
-            new CriarPedidoRequest("c", "Sul", "Normal", [new ItemPedidoRequest("A", 1, 10m)]), _servico);
-        var invalido = PedidosEndpoints.ReceberPedido(
-            new CriarPedidoRequest("", "Sul", "Normal", [new ItemPedidoRequest("A", 0, 10m)]), _servico);
+        // Roteiro 3: o endpoint passou a persistir o pedido aceito (201 Created).
+        using var banco = new Persistencia.BancoDeTeste();
+        using var contexto = banco.CriarContexto();
+        var repositorio = new HubPedidos.Infrastructure.Persistencia.RepositorioDePedidos(contexto);
 
-        var ok = Assert.IsInstanceOfType<Ok<PedidoResponse>>(valido.Result);
-        Assert.AreEqual("Padrao", ok.Value!.Categoria);
+        var valido = await PedidosEndpoints.ReceberPedidoAsync(
+            new CriarPedidoRequest("c", "Sul", "Normal", [new ItemPedidoRequest("A", 1, 10m)]), _servico, repositorio, CancellationToken.None);
+        var invalido = await PedidosEndpoints.ReceberPedidoAsync(
+            new CriarPedidoRequest("", "Sul", "Normal", [new ItemPedidoRequest("A", 0, 10m)]), _servico, repositorio, CancellationToken.None);
+
+        var criado = Assert.IsInstanceOfType<Created<PedidoResponse>>(valido.Result);
+        Assert.AreEqual("Padrao", criado.Value!.Categoria);
+        Assert.AreEqual($"/api/pedidos/{IdFixo}", criado.Location);
+        Assert.AreEqual(1, contexto.Pedidos.Count());
 
         var problema = Assert.IsInstanceOfType<ValidationProblem>(invalido.Result);
         CollectionAssert.AreEquivalent(

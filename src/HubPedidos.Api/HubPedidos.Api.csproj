@@ -2,8 +2,14 @@
   <!-- API HTTP (Minimal APIs). É o composition root da aplicação. -->
   <PropertyGroup>
     <RootNamespace>HubPedidos.Api</RootNamespace>
+    <!--
+      Roteiro 3: a connection string fica em User Secrets (fora do repositório).
+      Este identificador apenas aponta para a pasta de segredos; não é um segredo.
+    -->
+    <UserSecretsId>hubpedidos-api-7d3c2a9e</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\HubPedidos.Application\HubPedidos.Application.csproj" />
+    <ProjectReference Include="..\HubPedidos.Infrastructure\HubPedidos.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

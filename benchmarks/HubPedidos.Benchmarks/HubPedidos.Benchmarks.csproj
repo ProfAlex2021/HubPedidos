@@ -16,5 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\HubPedidos.Application\HubPedidos.Application.csproj" />
+    <!-- Roteiro 3: consultas EF Core (normal × compilada, deslocamento × cursor). -->
+    <ProjectReference Include="..\..\src\HubPedidos.Infrastructure\HubPedidos.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
