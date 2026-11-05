@@ -11,5 +11,7 @@
   <ItemGroup>
     <!-- Testes: MSTest 4 com Microsoft.Testing.Platform (publicado em 07/10/2026). -->
     <PackageVersion Include="MSTest" Version="4.5.1" />
+    <!-- Roteiro 2: medições (mesma versão usada no livro-texto; publicada em 30/11/2025). -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
   </ItemGroup>
 </Project>

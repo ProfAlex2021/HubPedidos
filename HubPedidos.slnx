@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/HubPedidos.Benchmarks/HubPedidos.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/Itens de Solução/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />

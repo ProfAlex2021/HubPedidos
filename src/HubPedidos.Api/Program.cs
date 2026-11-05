@@ -1,4 +1,5 @@
 using HubPedidos.Api.Endpoints;
+using HubPedidos.Application.Importacao;
 using HubPedidos.Application.Pedidos;
 using HubPedidos.Application.Processamento;
 
@@ -11,6 +12,14 @@ builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(_ => CatalogoDeProcessadores.DescobrirPadrao());
 builder.Services.AddSingleton(provedor =>
     new ServicoDeRecepcaoDePedidos(provedor.GetRequiredService<CatalogoDeProcessadores>()));
+
+// Roteiro 2: importação de lotes. Limites lidos da seção "Importacao" (com padrões
+// seguros no código). O importador não guarda estado entre chamadas: singleton.
+var opcoesDeImportacao = builder.Configuration.GetSection("Importacao").Get<OpcoesDeImportacao>() ?? OpcoesDeImportacao.Padrao;
+opcoesDeImportacao.Validar();
+builder.Services.AddSingleton(opcoesDeImportacao);
+builder.Services.AddSingleton(provedor => new ImportadorDeLotesPorFluxo(provedor.GetRequiredService<OpcoesDeImportacao>()));
+builder.Services.AddSingleton<ProcessadorDeLotes>();
 
 var app = builder.Build();
 

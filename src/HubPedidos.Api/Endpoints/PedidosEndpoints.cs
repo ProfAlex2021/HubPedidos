@@ -1,3 +1,4 @@
+using HubPedidos.Application.Importacao;
 using HubPedidos.Application.Pedidos;
 using HubPedidos.Application.Pedidos.Contratos;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,7 +13,25 @@ public static class PedidosEndpoints
         rotas.MapPost("/api/pedidos", ReceberPedido)
             .WithName("ReceberPedido");
 
+        // Roteiro 2: o corpo é lido como stream (sem binding para string) e a resposta
+        // é escrita progressivamente em NDJSON.
+        rotas.MapPost("/api/pedidos/lotes", ImportarLoteAsync)
+            .WithName("ImportarLote")
+            .Accepts<string>("text/plain")
+            .Produces(StatusCodes.Status200OK, contentType: "application/x-ndjson");
+
         return rotas;
+    }
+
+    /// <summary>
+    /// Processa um lote em formato delimitado sem carregar o corpo inteiro na memória:
+    /// cada linha é interpretada, processada e escrita assim que chega.
+    /// </summary>
+    public static async Task ImportarLoteAsync(HttpContext contexto, ProcessadorDeLotes processador, CancellationToken cancellationToken)
+    {
+        contexto.Response.StatusCode = StatusCodes.Status200OK;
+        contexto.Response.ContentType = "application/x-ndjson; charset=utf-8";
+        await processador.ProcessarAsync(contexto.Request.Body, contexto.Response.Body, cancellationToken);
     }
 
     /// <summary>

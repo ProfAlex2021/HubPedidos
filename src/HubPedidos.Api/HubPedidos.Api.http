@@ -66,6 +66,13 @@ Content-Type: application/json
   ]
 }
 
+### Roteiro 2 - lote delimitado (uma linha por pedido) -> resposta NDJSON com resumo no final
+# Linhas: aceito, aceito, aceito (UTF-8 multibyte), invalido, erro-de-formato, aceito (Volumosa), aceito (AltoValor)
+POST {{HubPedidos_HostAddress}}/api/pedidos/lotes
+Content-Type: text/plain; charset=utf-8
+
+< ./exemplos/lote-exemplo.txt
+
 ### Roteiro 1 - DTO inválido -> 400 com todos os erros (nenhum objeto de domínio é criado)
 POST {{HubPedidos_HostAddress}}/api/pedidos
 Content-Type: application/json

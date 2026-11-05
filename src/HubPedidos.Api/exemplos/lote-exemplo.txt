@@ -1,0 +1,7 @@
+cliente-001;Sudeste;Urgente;TECLADO:2:150.00,MOUSE:1:80.00
+cliente-002;Norte;Normal;LIVRO-CSHARP:1:120.50
+joão-ç;Sul;Alta;CAFÉ-ESPECIAL:3:39.90
+cliente-003;Nordeste;Normal;MONITOR:0:900.00
+cliente-004;Sul;Normal
+cliente-005;CentroOeste;Normal;PARAFUSO:60:0.25
+cliente-006;Sul;Urgente;NOTEBOOK:3:4999.99

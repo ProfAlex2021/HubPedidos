@@ -27,6 +27,7 @@ A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 | Roteiro | Título | Guia | Tag |
 |---|---|---|---|
 | 1 | Pattern matching, atributos, reflexão controlada, records e DTOs imutáveis | [roteiro-01](docs/roteiros/roteiro-01.md) | `roteiro-01` |
+| 2 | Span<T>, Memory<T>, pooling e caminhos críticos limitados por E/S e medidos | [roteiro-02](docs/roteiros/roteiro-02.md) | `roteiro-02` |
 
 ## Estrutura
 
@@ -36,6 +37,8 @@ src/
   HubPedidos.Domain/        Entidades, value objects e regras (sem dependências)
   HubPedidos.Application/   DTOs, mapeadores, casos de uso e processadores
   HubPedidos.Api/           Minimal API (composition root)
+benchmarks/
+  HubPedidos.Benchmarks/    BenchmarkDotNet (sempre em Release)
 tests/
   HubPedidos.Tests/         Testes MSTest (Microsoft.Testing.Platform)
 docs/roteiros/              Guia de cada roteiro: execução, decisões e evidências

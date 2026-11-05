@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Projeto de medição separado: não é referenciado pela API nem pelos testes.
+    Execute SEMPRE em Release e fora do depurador (comando completo em docs/roteiros/roteiro-02.md).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HubPedidos.Benchmarks</RootNamespace>
+    <!-- Otimizações sempre ligadas e símbolos completos para os diagnosers. -->
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HubPedidos.Application\HubPedidos.Application.csproj" />
+  </ItemGroup>
+</Project>
