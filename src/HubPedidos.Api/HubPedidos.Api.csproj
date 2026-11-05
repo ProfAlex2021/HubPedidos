@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- API HTTP (Minimal APIs). É o composition root da aplicação. -->
+  <PropertyGroup>
+    <RootNamespace>HubPedidos.Api</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HubPedidos.Application\HubPedidos.Application.csproj" />
+  </ItemGroup>
+</Project>

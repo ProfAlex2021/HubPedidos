@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Domínio: não referencia nenhum outro projeto nem pacote.
+    TargetFramework, LangVersion e Nullable vêm do Directory.Build.props.
+  -->
+  <PropertyGroup>
+    <RootNamespace>HubPedidos.Domain</RootNamespace>
+    <!--
+      CS8509: expressão switch não exaustiva. Fica como erro neste projeto porque
+      a classificação de pedidos precisa tratar explicitamente toda entrada.
+      (CS8510, braço inalcançável, já é erro por padrão no compilador.)
+    -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS8509</WarningsAsErrors>
+  </PropertyGroup>
+</Project>

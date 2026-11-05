@@ -1,0 +1,78 @@
+# Requisições de exemplo (Visual Studio 2026: abrir este arquivo e clicar em "Enviar solicitação").
+# Execute antes: dotnet run --project src/HubPedidos.Api --launch-profile http
+
+@HubPedidos_HostAddress = http://localhost:5080
+
+### Roteiro 1 - catálogo descoberto por reflexão (ordem determinística, versão ativa)
+GET {{HubPedidos_HostAddress}}/api/processadores
+
+### Roteiro 1 - pedido normal -> categoria Padrao
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-001",
+  "regiao": "Nordeste",
+  "prioridade": "Normal",
+  "itens": [
+    { "sku": "LIVRO-CSHARP", "quantidade": 2, "precoUnitario": 120.50 }
+  ]
+}
+
+### Roteiro 1 - pedido prioritário (Alta) -> categoria Prioritaria
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-002",
+  "regiao": "Norte",
+  "prioridade": "Alta",
+  "itens": [ { "sku": "MOUSE", "quantidade": 1, "precoUnitario": 80.00 } ]
+}
+
+### Roteiro 1 - urgente no Sudeste até R$ 5.000 -> Expressa (processador v2 ativo)
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-003",
+  "regiao": "sudeste",
+  "prioridade": "urgente",
+  "itens": [ { "sku": "TECLADO", "quantidade": 3, "precoUnitario": 250.00 } ]
+}
+
+### Roteiro 1 - caso-limite: exatamente R$ 10.000 continua Padrao
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-004",
+  "regiao": "Sul",
+  "prioridade": "Normal",
+  "itens": [ { "sku": "NOTEBOOK", "quantidade": 2, "precoUnitario": 5000.00 } ]
+}
+
+### Roteiro 1 - R$ 10.000,01 -> AltoValor
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "cliente-004",
+  "regiao": "Sul",
+  "prioridade": "Urgente",
+  "itens": [
+    { "sku": "NOTEBOOK", "quantidade": 2, "precoUnitario": 5000.00 },
+    { "sku": "CABO", "quantidade": 1, "precoUnitario": 0.01 }
+  ]
+}
+
+### Roteiro 1 - DTO inválido -> 400 com todos os erros (nenhum objeto de domínio é criado)
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "clienteId": "",
+  "regiao": "Marte",
+  "prioridade": "5",
+  "itens": [ { "sku": "", "quantidade": 0, "precoUnitario": 10.999 } ]
+}

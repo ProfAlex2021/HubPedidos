@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Projeto de testes MSTest executado pelo Microsoft.Testing.Platform (MTP),
+    como no livro-texto: o executor é habilitado explicitamente porque não
+    usamos o MSTest.Sdk. O global.json também seleciona o MTP para "dotnet test".
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <RootNamespace>HubPedidos.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MSTest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HubPedidos.Domain\HubPedidos.Domain.csproj" />
+    <ProjectReference Include="..\..\src\HubPedidos.Application\HubPedidos.Application.csproj" />
+    <ProjectReference Include="..\..\src\HubPedidos.Api\HubPedidos.Api.csproj" />
+  </ItemGroup>
+</Project>

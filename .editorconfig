@@ -1,0 +1,28 @@
+root = true
+
+# Regras gerais. O livro usa end_of_line = crlf; aqui fixamos LF para que
+# arquivos gerados por ferramentas (migrations, dotnet format, LibMan) e
+# arquivos escritos à mão tenham o mesmo final de linha no Git e no Windows.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+[*.{csproj,props,targets,slnx,xml,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cmd,bat}]
+end_of_line = crlf
+
+[*.cs]
+# Convenções do livro-texto (Unidade I): mantêm os exemplos consistentes
+# sem alterar a semântica do código.
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_style_namespace_declarations = file_scoped:suggestion

@@ -1,0 +1,25 @@
+<Project>
+  <!--
+    Propriedades comuns a todos os projetos da solução.
+    O livro-texto repete estas linhas em cada .csproj; aqui elas ficam centralizadas
+    para que nenhum projeto "esqueça" de fixar .NET 10 e C# 14.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- 14.0 e não "latest": "latest" muda de significado conforme o SDK instalado. -->
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+
+    <!--
+      Auditoria de vulnerabilidades do NuGet: inclui dependências transitivas e
+      transforma os avisos NU1901-NU1904 em erro, para que um pacote vulnerável
+      impeça o build em vez de passar despercebido.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+  </PropertyGroup>
+</Project>

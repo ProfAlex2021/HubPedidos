@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Aplicação: contratos (DTOs), mapeadores, casos de uso e processadores. -->
+  <PropertyGroup>
+    <RootNamespace>HubPedidos.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HubPedidos.Domain\HubPedidos.Domain.csproj" />
+  </ItemGroup>
+</Project>

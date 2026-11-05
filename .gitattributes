@@ -1,0 +1,12 @@
+# Normaliza finais de linha: o repositório guarda LF; scripts .cmd/.bat usam CRLF.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binários que nunca devem sofrer conversão de texto.
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
+*.nettrace binary
+*.zip binary

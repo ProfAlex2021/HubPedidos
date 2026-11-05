@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Gerenciamento central de versões (Central Package Management).
+    Cada projeto declara apenas <PackageReference Include="..." /> e a versão
+    fica registrada em um único lugar, o que facilita documentar e auditar.
+    Critério: versão estável, publicada há pelo menos duas semanas.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Testes: MSTest 4 com Microsoft.Testing.Platform (publicado em 07/10/2026). -->
+    <PackageVersion Include="MSTest" Version="4.5.1" />
+  </ItemGroup>
+</Project>
