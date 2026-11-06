@@ -118,6 +118,7 @@ public sealed class FilaDeProcessamento
         }
 
         _metricas.RegistrarRejeitado();
+        Diagnostico.TelemetriaDoHub.AdmissoesRejeitadas.Add(1);
         return ResultadoDaAdmissao.Rejeitado;
     }
 

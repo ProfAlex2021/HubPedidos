@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Roteiro 5: script de carga versionado. Gera requisições HTTP com TAXA explícita
+    contra a API em execução e calcula p50/p95/p99, vazão, erros e timeouts.
+    Uso e parâmetros: docs/roteiros/roteiro-05.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HubPedidos.Carga</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

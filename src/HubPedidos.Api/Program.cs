@@ -73,6 +73,10 @@ if (args.Contains("--somente-preparar-banco"))
     return;
 }
 
+// Roteiro 5: profundidade da fila como métrica observável (dotnet-counters).
+var filaDeProcessamento = app.Services.GetRequiredService<FilaDeProcessamento>();
+HubPedidos.Application.Diagnostico.TelemetriaDoHub.PublicarProfundidadeDaFila(() => filaDeProcessamento.Profundidade);
+
 // Erros de binding (ex.: PedidoId inválido na rota) chegam como BadHttpRequestException
 // com status 400; sem o seletor, o manipulador global os transformaria em 500.
 app.UseExceptionHandler(new ExceptionHandlerOptions
@@ -99,6 +103,26 @@ static async Task PrepararBancoAsync(WebApplication app, string[] args)
     {
         await contexto.Database.MigrateAsync();
         app.Logger.LogInformation("Migrations aplicadas.");
+    }
+
+    // Roteiro 5: modo de journal do SQLite explícito ("DELETE" é o padrão do SQLite;
+    // "WAL" foi a intervenção avaliada). O modo WAL fica gravado no arquivo do banco.
+    if (app.Configuration["Banco:ModoJournal"] is { Length: > 0 } modo)
+    {
+        if (modo is not ("DELETE" or "WAL"))
+        {
+            throw new InvalidOperationException("Banco:ModoJournal deve ser DELETE ou WAL.");
+        }
+
+        // A conexão pertence ao contexto: abre e fecha por ele, sem descartá-la.
+        await contexto.Database.OpenConnectionAsync();
+        await using (var comando = contexto.Database.GetDbConnection().CreateCommand())
+        {
+            comando.CommandText = $"PRAGMA journal_mode={modo};";
+            app.Logger.LogInformation("SQLite journal_mode = {Modo}.", await comando.ExecuteScalarAsync());
+        }
+
+        await contexto.Database.CloseConnectionAsync();
     }
 
     var indice = Array.IndexOf(args, "--semear");

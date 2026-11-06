@@ -123,6 +123,10 @@ public sealed class ProcessadorDePedidosWorker(
 
             var duracao = Stopwatch.GetElapsedTime(inicio);
             metricas.RegistrarResultado(resultado, duracao);
+            if (resultado == ResultadoDoProcessamento.Processado)
+            {
+                Diagnostico.TelemetriaDoHub.PedidosProcessados.Add(1);
+            }
             logger.LogInformation("Pedido {PedidoId}: {Resultado} em {DuracaoMs:F1} ms.", job.PedidoId, resultado, duracao.TotalMilliseconds);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)

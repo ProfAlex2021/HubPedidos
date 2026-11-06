@@ -55,6 +55,7 @@ public sealed class ServicoDeRecepcaoDePedidos(CatalogoDeProcessadores catalogo,
         }
 
         var processamento = entrada.Instancia.Processar(pedido);
+        Diagnostico.TelemetriaDoHub.PedidosRecebidos.Add(1, new KeyValuePair<string, object?>("categoria", classificacao.Categoria.ToString()));
         return new ResultadoDaRecepcao.Aceito(
             MapeadorDePedido.ParaResposta(pedido, classificacao, processamento),
             pedido,

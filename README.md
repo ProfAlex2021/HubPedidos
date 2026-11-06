@@ -41,6 +41,7 @@ A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 | 2 | Span<T>, Memory<T>, pooling e caminhos críticos limitados por E/S e medidos | [roteiro-02](docs/roteiros/roteiro-02.md) | `roteiro-02` |
 | 3 | Consultas previsíveis, projeções, tracking, consultas compiladas e JSON | [roteiro-03](docs/roteiros/roteiro-03.md) | `roteiro-03` |
 | 4 | Channels, SemaphoreSlim, coleções concorrentes e backpressure | [roteiro-04](docs/roteiros/roteiro-04.md) | `roteiro-04` |
+| 5 | BenchmarkDotNet, counters, traces, p95/p99 e testes de carga | [roteiro-05](docs/roteiros/roteiro-05.md) | `roteiro-05` |
 
 ## Estrutura
 
@@ -53,6 +54,8 @@ src/
   HubPedidos.Api/           Minimal API (composition root)
 benchmarks/
   HubPedidos.Benchmarks/    BenchmarkDotNet (sempre em Release)
+tools/
+  HubPedidos.Carga/         Script de carga (p50/p95/p99, erros, timeouts)
 tests/
   HubPedidos.Tests/         Testes MSTest (Microsoft.Testing.Platform)
 docs/roteiros/              Guia de cada roteiro: execução, decisões e evidências
