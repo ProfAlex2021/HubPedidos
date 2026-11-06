@@ -52,6 +52,16 @@ powershell -ExecutionPolicy Bypass -File scripts/criar-usuarios-teste.ps1
 | 5 | BenchmarkDotNet, counters, traces, p95/p99 e testes de carga | [roteiro-05](docs/roteiros/roteiro-05.md) | `roteiro-05` |
 | 6 | Modularização, IoC, fronteiras e versionamento compatível de APIs | [roteiro-06](docs/roteiros/roteiro-06.md) | `roteiro-06` |
 | 7 | SignalR, reconexão, streaming, cache de resposta e ETags | [roteiro-07](docs/roteiros/roteiro-07.md) | `roteiro-07` |
+| 8 | WebApplicationFactory, bancos efêmeros, analisadores e revisão automatizada | [roteiro-08](docs/roteiros/roteiro-08.md) | `roteiro-08` |
+
+## Revisão automatizada
+
+Antes de abrir um pull request, rode a mesma revisão do CI (restore, build com
+analisadores, `dotnet format --verify-no-changes` e testes com TRX e cobertura em `artefatos/`):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/revisao.ps1
+```
 
 ## Estrutura
 
@@ -67,7 +77,10 @@ benchmarks/
 tools/
   HubPedidos.Carga/         Script de carga (p50/p95/p99, erros, timeouts)
 tests/
-  HubPedidos.Tests/         Testes MSTest (Microsoft.Testing.Platform)
+  HubPedidos.Tests/         Testes unitários e de arquitetura (MSTest + Microsoft.Testing.Platform)
+  HubPedidos.Integracao.Testes/ Testes de integração: API em memória + SQLite em memória
+scripts/revisao.ps1         Revisão automatizada (restore, build, format, testes)
+.github/workflows/          A mesma revisão no GitHub Actions
 docs/roteiros/              Guia de cada roteiro: execução, decisões e evidências
 docs/adr/                   Registros de decisões arquiteturais
 ```

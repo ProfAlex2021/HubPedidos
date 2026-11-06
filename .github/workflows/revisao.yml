@@ -1,0 +1,76 @@
+# Revisão automatizada (Roteiro 8). Executa o MESMO script usado localmente
+# (scripts/revisao.ps1): restore -> build com analisadores -> dotnet format
+# --verify-no-changes -> testes (TRX + cobertura). Se qualquer etapa falhar, o job
+# falha e o job de publicação NÃO roda (needs).
+#
+# Actions oficiais fixadas por SHA de commit (a tag pode ser movida; o SHA não).
+# Versões estáveis com mais de duas semanas de publicação:
+#   actions/checkout v5.1.0 (20/07/2026), actions/setup-dotnet v5.4.0 (26/06/2026),
+#   actions/upload-artifact v5.0.0 (24/10/2025).
+name: Revisão automatizada
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Menor privilégio: o workflow só lê o repositório.
+permissions:
+  contents: read
+
+concurrency:
+  group: revisao-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  revisao:
+    name: Restore, build, format e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: SDK do global.json
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: global.json
+
+      - name: Revisão (scripts/revisao.ps1)
+        shell: pwsh
+        run: ./scripts/revisao.ps1 -Resultados artefatos -Repeticoes 2
+
+      # Publica os resultados MESMO quando a revisão falha: é ali que está o porquê.
+      - name: Resultados dos testes e cobertura
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: resultados-da-revisao
+          path: artefatos/
+          if-no-files-found: warn
+          retention-days: 14
+
+  publicacao:
+    name: Pacote da API (só se a revisão passar)
+    needs: revisao
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: global.json
+
+      - name: dotnet publish
+        run: dotnet publish src/HubPedidos.Api/HubPedidos.Api.csproj -c Release -o publicacao
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: hubpedidos-api
+          path: publicacao/
+          retention-days: 7

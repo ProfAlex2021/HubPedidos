@@ -486,3 +486,9 @@ dados/
 *.db
 *.db-shm
 *.db-wal
+
+# Roteiro 8: snapshot recebido aguardando revisão (nunca é aprovado automaticamente)
+*.recebido.json
+
+# Roteiro 8: resultados da revisão automatizada (TRX, cobertura, relatórios)
+artefatos/

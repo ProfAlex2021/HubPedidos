@@ -8,11 +8,14 @@ namespace HubPedidos.Infrastructure.Notificacoes;
 /// estruturado. Singleton (sem estado). No Roteiro 7 a API registra uma implementação
 /// com SignalR no lugar desta, sem mudar quem publica.
 /// </summary>
-public sealed class NotificadorPorLog(ILogger<NotificadorPorLog> logger) : INotificadorDePedidos
+public sealed partial class NotificadorPorLog(ILogger<NotificadorPorLog> logger) : INotificadorDePedidos
 {
     public ValueTask PublicarAsync(MudancaDeSituacao mudanca, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Pedido {PedidoId} mudou para {Situacao} em {Instante:o}.", mudanca.PedidoId, mudanca.Situacao, mudanca.InstanteUtc);
+        RegistrarMudanca(logger, mudanca.PedidoId, mudanca.Situacao, mudanca.InstanteUtc);
         return ValueTask.CompletedTask;
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Pedido {PedidoId} mudou para {Situacao} em {Instante:o}.")]
+    private static partial void RegistrarMudanca(ILogger logger, Domain.Pedidos.PedidoId pedidoId, Domain.Pedidos.SituacaoPedido situacao, DateTime instante);
 }

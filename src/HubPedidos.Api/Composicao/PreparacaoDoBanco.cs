@@ -19,7 +19,7 @@ public static class PreparacaoDoBanco
         if (app.Configuration.GetValue<bool>("Banco:AplicarMigracoesNaInicializacao"))
         {
             await contexto.Database.MigrateAsync();
-            app.Logger.LogInformation("Migrations aplicadas.");
+            app.Logger.MigracoesAplicadas();
         }
 
         // Roteiro 5: modo de journal do SQLite explícito ("DELETE" é o padrão do SQLite;
@@ -36,7 +36,10 @@ public static class PreparacaoDoBanco
             await using (var comando = contexto.Database.GetDbConnection().CreateCommand())
             {
                 comando.CommandText = $"PRAGMA journal_mode={modo};";
-                app.Logger.LogInformation("SQLite journal_mode = {Modo}.", await comando.ExecuteScalarAsync());
+                // O PRAGMA precisa rodar de qualquer forma: o resultado vai para uma variável
+                // e só o log depende do nível habilitado (CA1873).
+                var modoAplicado = await comando.ExecuteScalarAsync();
+                app.Logger.ModoDeJournal(modoAplicado);
             }
 
             await contexto.Database.CloseConnectionAsync();
@@ -47,7 +50,7 @@ public static class PreparacaoDoBanco
         {
             var total = await SemeadorDePedidos.SemearAsync(
                 contexto, app.Services.GetRequiredService<CatalogoDeProcessadores>(), quantidade, DateTime.UtcNow);
-            app.Logger.LogInformation("Massa de dados gerada: {Total} pedidos no banco.", total);
+            app.Logger.MassaGerada(total);
         }
     }
 }

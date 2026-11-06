@@ -11,7 +11,7 @@ namespace HubPedidos.Api.TempoReal;
 /// 2. publica o evento tipado só para o grupo do pedido.
 /// Singleton: IHubContext e IOutputCacheStore são singletons e não guardam estado por chamada.
 /// </summary>
-public sealed class NotificadorDaApi(
+public sealed partial class NotificadorDaApi(
     IHubContext<PedidosHub, IClienteDePedidos> hub,
     IOutputCacheStore cache,
     ILogger<NotificadorDaApi> logger) : INotificadorDePedidos
@@ -24,6 +24,9 @@ public sealed class NotificadorDaApi(
 
         var evento = new PedidoAtualizado(mudanca.PedidoId.ToString(), mudanca.Situacao.ToString(), mudanca.InstanteUtc.Ticks, mudanca.InstanteUtc);
         await hub.Clients.Group(PedidosHub.Grupo(mudanca.PedidoId)).PedidoAtualizado(evento);
-        logger.LogInformation("Pedido {PedidoId} -> {Situacao}: evento publicado e cache invalidado.", mudanca.PedidoId, mudanca.Situacao);
+        RegistrarPublicacao(logger, mudanca.PedidoId, mudanca.Situacao);
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Pedido {PedidoId} -> {Situacao}: evento publicado e cache invalidado.")]
+    private static partial void RegistrarPublicacao(ILogger logger, Domain.Pedidos.PedidoId pedidoId, Domain.Pedidos.SituacaoPedido situacao);
 }

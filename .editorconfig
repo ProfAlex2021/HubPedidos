@@ -26,3 +26,37 @@ end_of_line = crlf
 dotnet_sort_system_directives_first = true
 csharp_new_line_before_open_brace = all
 csharp_style_namespace_declarations = file_scoped:suggestion
+
+# ---------------------------------------------------------------------------
+# Roteiro 8: política de diagnósticos (Unidade IV, 8.2).
+# Severidades proporcionais ao risco. O que BLOQUEIA o build fica em
+# Directory.Build.props (WarningsAsErrors); aqui se decide o que aparece.
+# Nenhuma regra é desligada para a solução inteira: cada exceção tem escopo.
+
+[*.cs]
+# Estilo: sugestões (consistência, sem defeito funcional).
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_for_built_in_types = false:suggestion
+# Qualidade: recomendação visível, não bloqueante (exemplo da Unidade IV).
+dotnet_diagnostic.CA1822.severity = warning
+# Logs com [LoggerMessage]: aviso para que nenhum log novo volte ao modo antigo.
+dotnet_diagnostic.CA1848.severity = warning
+dotnet_diagnostic.CA1873.severity = warning
+# Nulabilidade: CS8602 é elevada a erro no build (Directory.Build.props).
+dotnet_diagnostic.CS8602.severity = warning
+
+# Migrations são geradas pelo dotnet-ef: os analisadores não as avaliam
+# (corrigi-las à mão seria sobrescrito na próxima geração).
+[src/HubPedidos.Infrastructure/Persistencia/Migracoes/*.cs]
+generated_code = true
+
+# ResultadoDeMapeamento<T>.Sucesso/Falha são as fábricas do tipo resultado; uma
+# classe auxiliar não genérica só adicionaria indireção (CA1000 com escopo de 1 arquivo).
+[src/HubPedidos.Application/Pedidos/ResultadoDeMapeamento.cs]
+dotnet_diagnostic.CA1000.severity = none
+
+# Testes: nomes com sublinhado ("Dado_quando_entao") são a convenção de legibilidade
+# dos relatórios de teste, e matrizes literais nos asserts deixam o esperado à vista.
+[tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = suggestion

@@ -58,6 +58,10 @@ estão versionados em `wwwroot/lib`, para a página funcionar sem rede.
 | `tests/.../Api/CacheEValidacaoCondicionalTestes.cs`, `TempoRealTestes.cs` | Testes obrigatórios e da extensão |
 | `tests/.../Api/FabricaComBancoTemporario.cs` | Usuários com senha aleatória por execução, token e conexão SignalR em processo |
 
+> **Nota (Roteiro 8):** estes testes foram movidos para `tests/HubPedidos.Integracao.Testes/`
+> (`Cache/`, `TempoReal/`), e a fábrica passou a ser `Infraestrutura/FabricaDaAplicacao.cs`,
+> com banco em memória.
+
 ## Decisões técnicas
 
 ### Etapa 1 — Eventos com SignalR

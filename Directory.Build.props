@@ -22,4 +22,17 @@
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
+
+  <!--
+    Roteiro 8: análise no build (Unidade IV, 8.2). Os analisadores vêm do próprio SDK,
+    sem pacote NuGet. "latest-recommended" usa o conjunto recomendado do SDK fixado no
+    global.json; trocar o SDK pode trazer regras novas, por isso a versão é fixada.
+    A severidade de cada regra fica no .editorconfig; aqui só se decide o que BLOQUEIA.
+  -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <WarningsAsErrors>$(WarningsAsErrors);CS8602</WarningsAsErrors>
+  </PropertyGroup>
 </Project>

@@ -20,13 +20,13 @@ public class ContextoDePedidos(DbContextOptions options) : DbContext(options)
         modelBuilder.Entity<ItemPedidoRegistro>(ConfigurarItem);
     }
 
-    protected override void ConfigureConventions(ModelConfigurationBuilder configuracao)
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         // Enums gravados como texto: legíveis no banco e estáveis se a ordem do enum mudar.
-        configuracao.Properties<Enum>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<Enum>().HaveConversion<string>().HaveMaxLength(20);
 
         // SQLite devolve DateTime sem "Kind"; todos os instantes da aplicação são UTC.
-        configuracao.Properties<DateTime>().HaveConversion<ConversorDeDataUtc>();
+        configurationBuilder.Properties<DateTime>().HaveConversion<ConversorDeDataUtc>();
     }
 
     private void ConfigurarPedido(EntityTypeBuilder<PedidoRegistro> pedido)

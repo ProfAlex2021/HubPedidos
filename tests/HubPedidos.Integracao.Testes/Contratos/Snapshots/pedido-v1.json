@@ -1,0 +1,23 @@
+{
+  "id": "<id:string>",
+  "clienteId": "cliente-snapshot",
+  "regiao": "Sul",
+  "prioridade": "Normal",
+  "categoria": "Padrao",
+  "motivoDaCategoria": "Pedido sem condições especiais.",
+  "processador": "ProcessadorPadrao v1",
+  "prazoEstimadoEmDias": 5,
+  "valorTotal": 50,
+  "quantidadeDeItens": 4,
+  "itens": [
+    {
+      "sku": "A",
+      "quantidade": 4,
+      "precoUnitario": 12.5,
+      "subtotal": 50.0
+    }
+  ],
+  "situacao": "Recebido",
+  "criadoEmUtc": "<criadoEmUtc:string>",
+  "endereco": null
+}

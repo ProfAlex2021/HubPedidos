@@ -2,8 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HubPedidos.Integracao.Testes.Infraestrutura;
 
-namespace HubPedidos.Tests.Api;
+namespace HubPedidos.Integracao.Testes.Cache;
 
 /// <summary>Roteiro 7: ETag, If-None-Match/304, If-Match/412 e output cache.</summary>
 [TestClass]
@@ -12,9 +13,9 @@ public sealed class CacheEValidacaoCondicionalTestes
     [TestMethod]
     public async Task ETag_e_estavel_e_If_None_Match_valido_devolve_304_sem_corpo()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         var ana = await fabrica.CriarClienteAutenticadoAsync("ana");
-        var id = await CriarPedidoAsync(fabrica, "cliente-001");
+        var id = await fabrica.CriarPedidoAsync("cliente-001");
 
         var primeira = await ana.GetAsync($"/api/v2/pedidos/{id}");
         var segunda = await ana.GetAsync($"/api/v2/pedidos/{id}");
@@ -43,9 +44,9 @@ public sealed class CacheEValidacaoCondicionalTestes
     [TestMethod]
     public async Task ETag_muda_quando_a_representacao_muda_e_valor_obsoleto_recebe_200()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         var ana = await fabrica.CriarClienteAutenticadoAsync("ana");
-        var id = await CriarPedidoAsync(fabrica, "cliente-001");
+        var id = await fabrica.CriarPedidoAsync("cliente-001");
         var etagAntiga = (await ana.GetAsync($"/api/v2/pedidos/{id}")).Headers.ETag!;
 
         (await ana.PostAsync($"/api/pedidos/{id}/cancelamento", null)).EnsureSuccessStatusCode();
@@ -67,10 +68,10 @@ public sealed class CacheEValidacaoCondicionalTestes
     [TestMethod]
     public async Task Autorizacao_vem_antes_da_ETag_e_respostas_privadas_nao_sao_compartilhadas()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         var ana = await fabrica.CriarClienteAutenticadoAsync("ana");
         var bruno = await fabrica.CriarClienteAutenticadoAsync("bruno");
-        var id = await CriarPedidoAsync(fabrica, "cliente-001");
+        var id = await fabrica.CriarPedidoAsync("cliente-001");
         var etagDaAna = (await ana.GetAsync($"/api/v2/pedidos/{id}")).Headers.ETag!;
 
         // Bruno, mesmo com a ETag correta, não recebe 304 nem o corpo: 404.
@@ -78,16 +79,16 @@ public sealed class CacheEValidacaoCondicionalTestes
         condicional.Headers.IfNoneMatch.Add(etagDaAna);
         Assert.AreEqual(HttpStatusCode.NotFound, (await bruno.SendAsync(condicional)).StatusCode);
         Assert.AreEqual(HttpStatusCode.NotFound, (await bruno.GetAsync($"/api/v2/pedidos/{id}")).StatusCode);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, (await fabrica.CreateClient().GetAsync($"/api/v2/pedidos/{id}")).StatusCode);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, (await fabrica.CriarCliente().GetAsync($"/api/v2/pedidos/{id}")).StatusCode);
         Assert.AreEqual(HttpStatusCode.OK, (await ana.GetAsync($"/api/v2/pedidos/{id}")).StatusCode);
     }
 
     [TestMethod]
     public async Task If_Match_obsoleto_devolve_412_e_nao_altera_o_pedido()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         var ana = await fabrica.CriarClienteAutenticadoAsync("ana");
-        var id = await CriarPedidoAsync(fabrica, "cliente-001");
+        var id = await fabrica.CriarPedidoAsync("cliente-001");
         var etagAtual = (await ana.GetAsync($"/api/v2/pedidos/{id}")).Headers.ETag!;
 
         using var obsoleto = new HttpRequestMessage(HttpMethod.Post, $"/api/v2/pedidos/{id}/cancelamento");
@@ -106,9 +107,9 @@ public sealed class CacheEValidacaoCondicionalTestes
     [TestMethod]
     public async Task Output_cache_reutiliza_a_leitura_publica_varia_por_query_e_e_invalidado_por_tag()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var anonimo = fabrica.CreateClient();
-        await CriarPedidoAsync(fabrica, "cliente-001");
+        await using var fabrica = new FabricaDaAplicacao();
+        var anonimo = fabrica.CriarCliente();
+        await fabrica.CriarPedidoAsync("cliente-001");
 
         var geracoes = new List<string>();
         for (var i = 0; i < 20; i++)
@@ -122,7 +123,7 @@ public sealed class CacheEValidacaoCondicionalTestes
         Assert.AreNotEqual(geracoes[0], outraVariacao);    // "dias" faz parte da chave
 
         // Uma mudança de pedido invalida a tag: a próxima leitura é recalculada e inclui o novo pedido.
-        await CriarPedidoAsync(fabrica, "cliente-002");
+        await fabrica.CriarPedidoAsync("cliente-002");
         var depois = await anonimo.GetAsync("/api/estatisticas/categorias?dias=30");
         using var corpo = JsonDocument.Parse(await depois.Content.ReadAsStringAsync());
 
@@ -134,36 +135,11 @@ public sealed class CacheEValidacaoCondicionalTestes
     public void Output_cache_e_registrado_depois_de_autenticacao_e_autorizacao()
     {
         // Verificação estática da ordem do pipeline no composition root.
-        var program = File.ReadAllText(Path.Combine(LocalizarRaiz(), "src", "HubPedidos.Api", "Program.cs"));
+        var program = File.ReadAllText(Path.Combine(Repositorio.Raiz, "src", "HubPedidos.Api", "Program.cs"));
         var autenticacao = program.IndexOf("app.UseAuthentication();", StringComparison.Ordinal);
         var autorizacao = program.IndexOf("app.UseAuthorization();", StringComparison.Ordinal);
         var cache = program.IndexOf("app.UseOutputCache();", StringComparison.Ordinal);
 
         Assert.IsTrue(autenticacao > 0 && autenticacao < autorizacao && autorizacao < cache, "Ordem esperada: UseAuthentication -> UseAuthorization -> UseOutputCache.");
-    }
-
-    internal static async Task<string> CriarPedidoAsync(FabricaComBancoTemporario fabrica, string cliente)
-    {
-        var resposta = await fabrica.CreateClient().PostAsJsonAsync("/api/pedidos", new
-        {
-            clienteId = cliente,
-            regiao = "Sul",
-            prioridade = "Normal",
-            itens = new[] { new { sku = "A", quantidade = 1, precoUnitario = 10m } },
-        });
-        resposta.EnsureSuccessStatusCode();
-        using var json = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return json.RootElement.GetProperty("id").GetString()!;
-    }
-
-    private static string LocalizarRaiz()
-    {
-        var pasta = new DirectoryInfo(AppContext.BaseDirectory);
-        while (pasta is not null && !File.Exists(Path.Combine(pasta.FullName, "HubPedidos.slnx")))
-        {
-            pasta = pasta.Parent;
-        }
-
-        return pasta?.FullName ?? throw new InvalidOperationException("Raiz do repositório não encontrada.");
     }
 }

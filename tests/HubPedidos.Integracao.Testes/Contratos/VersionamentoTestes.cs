@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HubPedidos.Integracao.Testes.Infraestrutura;
 
-namespace HubPedidos.Tests.Api;
+namespace HubPedidos.Integracao.Testes.Contratos;
 
 /// <summary>
 /// Cliente que representa o front-end publicado ANTES da v2: tem a sua própria cópia
@@ -51,8 +52,8 @@ public sealed class VersionamentoTestes
     [TestMethod]
     public async Task Cliente_v1_continua_funcionando_na_aplicacao_que_tambem_tem_v2()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var clienteV1 = new ClienteFrontEndV1(fabrica.CreateClient());
+        await using var fabrica = new FabricaDaAplicacao();
+        var clienteV1 = new ClienteFrontEndV1(fabrica.CriarCliente());
 
         var id = await clienteV1.CriarAsync("cliente-legado", preco: 12.50m, quantidade: 4);
         var lido = await clienteV1.ObterAsync(id);
@@ -72,8 +73,8 @@ public sealed class VersionamentoTestes
     [TestMethod]
     public async Task V1_tem_contrato_estavel_e_cabecalhos_de_ciclo_de_vida()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var http = fabrica.CreateClient();
+        await using var fabrica = new FabricaDaAplicacao();
+        var http = fabrica.CriarCliente();
         var id = await new ClienteFrontEndV1(http).CriarAsync("c", 10m, 1);
 
         var semVersao = await http.GetAsync($"/api/pedidos/{id}");
@@ -95,8 +96,8 @@ public sealed class VersionamentoTestes
     [TestMethod]
     public async Task V2_tem_o_contrato_novo_e_a_mesma_semantica()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var clienteV1 = new ClienteFrontEndV1(fabrica.CreateClient());
+        await using var fabrica = new FabricaDaAplicacao();
+        var clienteV1 = new ClienteFrontEndV1(fabrica.CriarCliente());
         var id = await clienteV1.CriarAsync("cliente-v2", 7.25m, 2);
         // Roteiro 7: a v2 exige autenticação; o operador pode ver qualquer pedido.
         var http = await fabrica.CriarClienteAutenticadoAsync("operador");
@@ -126,8 +127,8 @@ public sealed class VersionamentoTestes
     [DataRow(99)]
     public async Task Versao_nao_suportada_segue_politica_explicita(int versao)
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var http = fabrica.CreateClient();
+        await using var fabrica = new FabricaDaAplicacao();
+        var http = fabrica.CriarCliente();
 
         var resposta = await http.GetAsync($"/api/v{versao}/pedidos/{Guid.CreateVersion7()}");
 
@@ -139,8 +140,8 @@ public sealed class VersionamentoTestes
     [TestMethod]
     public async Task OpenAPI_e_separado_por_versao()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var http = fabrica.CreateClient();
+        await using var fabrica = new FabricaDaAplicacao();
+        var http = fabrica.CriarCliente();
 
         var v1 = await http.GetStringAsync("/openapi/v1.json");
         var v2 = await http.GetStringAsync("/openapi/v2.json");

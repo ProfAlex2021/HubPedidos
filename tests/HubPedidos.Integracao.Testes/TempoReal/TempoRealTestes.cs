@@ -1,9 +1,10 @@
 using System.Net.Http.Json;
 using System.Threading.Channels;
+using HubPedidos.Integracao.Testes.Infraestrutura;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 
-namespace HubPedidos.Tests.Api;
+namespace HubPedidos.Integracao.Testes.TempoReal;
 
 /// <summary>Roteiro 7: hub, autorização no servidor, grupos, reconexão e revogação.</summary>
 [TestClass]
@@ -16,7 +17,7 @@ public sealed class TempoRealTestes
     [TestMethod]
     public async Task Conexao_sem_autenticacao_e_recusada()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         await using var conexao = fabrica.CriarConexao(token: null);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => conexao.StartAsync());
@@ -25,9 +26,9 @@ public sealed class TempoRealTestes
     [TestMethod]
     public async Task Evento_chega_so_ao_cliente_autorizado_e_depois_da_mudanca_persistida()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var pedidoDaAna = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-001");
-        var pedidoDoBruno = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-002");
+        await using var fabrica = new FabricaDaAplicacao();
+        var pedidoDaAna = await fabrica.CriarPedidoAsync("cliente-001");
+        var pedidoDoBruno = await fabrica.CriarPedidoAsync("cliente-002");
         var (ana, eventosDaAna) = await ConectarAsync(fabrica, "ana");
         var (bruno, eventosDoBruno) = await ConectarAsync(fabrica, "bruno");
 
@@ -53,9 +54,9 @@ public sealed class TempoRealTestes
     [TestMethod]
     public async Task Reconexao_exige_novo_ingresso_e_estado_perdido_e_recuperado_por_HTTP()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var pedido = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-001");
-        var outro = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-001");
+        await using var fabrica = new FabricaDaAplicacao();
+        var pedido = await fabrica.CriarPedidoAsync("cliente-001");
+        var outro = await fabrica.CriarPedidoAsync("cliente-001");
         var (ana, eventos) = await ConectarAsync(fabrica, "ana");
         await ana.InvokeAsync("AcompanharPedido", pedido);
         var etagAntes = (await (await fabrica.CriarClienteAutenticadoAsync("ana")).GetAsync($"/api/v2/pedidos/{pedido}")).Headers.ETag!;
@@ -85,9 +86,9 @@ public sealed class TempoRealTestes
     [TestMethod]
     public async Task Revogacao_remove_associacoes_e_reconexao_revalida_a_autorizacao()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
-        var pedido1 = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-001");
-        var pedido2 = await CacheEValidacaoCondicionalTestes.CriarPedidoAsync(fabrica, "cliente-001");
+        await using var fabrica = new FabricaDaAplicacao();
+        var pedido1 = await fabrica.CriarPedidoAsync("cliente-001");
+        var pedido2 = await fabrica.CriarPedidoAsync("cliente-001");
         var (ana, eventos) = await ConectarAsync(fabrica, "ana");
         // Token emitido ANTES da revogação: continua válido criptograficamente, mas a autorização passa a negar.
         var anaComTokenAntigo = await fabrica.CriarClienteAutenticadoAsync("ana");
@@ -108,20 +109,20 @@ public sealed class TempoRealTestes
         await Assert.ThrowsAsync<HubException>(() => ana.InvokeAsync("AcompanharPedido", pedido1));
         Assert.AreEqual(System.Net.HttpStatusCode.NotFound, (await anaComTokenAntigo.GetAsync($"/api/v2/pedidos/{pedido1}")).StatusCode);
         Assert.AreEqual(System.Net.HttpStatusCode.Unauthorized,
-            (await fabrica.CreateClient().PostAsJsonAsync("/api/autenticacao/token", new { usuario = "ana", senha = fabrica.Senhas["ana"] })).StatusCode);
+            (await fabrica.CriarCliente().PostAsJsonAsync("/api/autenticacao/token", new { usuario = "ana", senha = fabrica.Senhas["ana"] })).StatusCode);
         Assert.IsFalse(eventos.TryRead(out _)); // nenhum evento chegou depois da revogação
     }
 
     [TestMethod]
     public async Task Somente_operador_pode_revogar()
     {
-        await using var fabrica = new FabricaComBancoTemporario();
+        await using var fabrica = new FabricaDaAplicacao();
         var bruno = await fabrica.CriarClienteAutenticadoAsync("bruno");
 
         Assert.AreEqual(System.Net.HttpStatusCode.Forbidden, (await bruno.PostAsync("/api/admin/usuarios/ana/revogacao", null)).StatusCode);
     }
 
-    private static async Task<(HubConnection Conexao, ChannelReader<EventoRecebido> Eventos)> ConectarAsync(FabricaComBancoTemporario fabrica, string usuario)
+    private static async Task<(HubConnection Conexao, ChannelReader<EventoRecebido> Eventos)> ConectarAsync(FabricaDaAplicacao fabrica, string usuario)
     {
         var conexao = fabrica.CriarConexao(await fabrica.ObterTokenAsync(usuario));
         var canal = Channel.CreateUnbounded<EventoRecebido>();
@@ -130,6 +131,6 @@ public sealed class TempoRealTestes
         return (conexao, canal.Reader);
     }
 
-    private static async Task CancelarAsync(FabricaComBancoTemporario fabrica, string pedido) =>
+    private static async Task CancelarAsync(FabricaDaAplicacao fabrica, string pedido) =>
         (await (await fabrica.CriarClienteAutenticadoAsync("operador")).PostAsync($"/api/pedidos/{pedido}/cancelamento", null)).EnsureSuccessStatusCode();
 }

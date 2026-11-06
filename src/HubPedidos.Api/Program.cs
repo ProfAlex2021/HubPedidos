@@ -23,10 +23,7 @@ var app = builder.Build();
 // (duplicidade, metadado inconsistente, categoria sem processador) derruba a
 // inicialização com mensagem legível, em vez de falhar na primeira chamada.
 var catalogo = app.Services.GetRequiredService<CatalogoDeProcessadores>();
-app.Logger.LogInformation(
-    "Catálogo de processadores pronto: {Quantidade} registros, {Ativos} ativos.",
-    catalogo.Entradas.Count,
-    catalogo.Ativos.Count);
+app.Logger.CatalogoPronto(catalogo.Entradas.Count, catalogo.Ativos.Count);
 
 await PreparacaoDoBanco.ExecutarAsync(app, args);
 if (args.Contains("--somente-preparar-banco"))

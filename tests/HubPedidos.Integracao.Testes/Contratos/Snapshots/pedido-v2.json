@@ -1,0 +1,33 @@
+{
+  "id": "<id:string>",
+  "cliente": {
+    "id": "cliente-001"
+  },
+  "situacao": "recebido",
+  "categoria": "Padrao",
+  "valor": {
+    "quantia": 50,
+    "moeda": "BRL"
+  },
+  "entrega": {
+    "regiao": "Sul",
+    "prioridade": "Normal",
+    "endereco": null
+  },
+  "previsaoDeEntrega": "<previsaoDeEntrega:string>",
+  "criadoEm": "<criadoEm:string>",
+  "itens": [
+    {
+      "sku": "A",
+      "quantidade": 4,
+      "precoUnitario": {
+        "quantia": 12.5,
+        "moeda": "BRL"
+      },
+      "subtotal": {
+        "quantia": 50.0,
+        "moeda": "BRL"
+      }
+    }
+  ]
+}

@@ -28,7 +28,7 @@ public interface IProcessamentoDePedido
 /// - A falha de um item é registrada com o identificador do pedido e não derruba o
 ///   consumidor; os demais itens continuam.
 /// </remarks>
-public sealed class ProcessadorDePedidosWorker(
+public sealed partial class ProcessadorDePedidosWorker(
     FilaDeProcessamento fila,
     MetricasDoProcessamento metricas,
     IServiceScopeFactory fabricaDeEscopos,
@@ -52,9 +52,7 @@ public sealed class ProcessadorDePedidosWorker(
         var token = _cancelamentoForcado.Token;
         Consumidores = Task.WhenAll(Enumerable.Range(1, fila.Opcoes.Consumidores)
             .Select(numero => Task.Run(() => ConsumirAsync(numero, token), CancellationToken.None)));
-        logger.LogInformation(
-            "Worker iniciado: {Consumidores} consumidores, capacidade {Capacidade}, modo {Modo}.",
-            fila.Opcoes.Consumidores, fila.Opcoes.Capacidade, fila.Opcoes.ModoQuandoCheia);
+        RegistrarInicio(logger, fila.Opcoes.Consumidores, fila.Opcoes.Capacidade, fila.Opcoes.ModoQuandoCheia);
         return base.StartAsync(cancellationToken);
     }
 
@@ -63,18 +61,18 @@ public sealed class ProcessadorDePedidosWorker(
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         fila.Concluir();
-        logger.LogInformation("Encerrando: fila concluída com {Pendentes} itens para drenar.", fila.Profundidade);
+        RegistrarEncerramento(logger, fila.Profundidade);
 
         // Quando o prazo do host acabar, força a parada dos consumidores.
         await using var registro = cancellationToken.Register(() => _cancelamentoForcado.Cancel());
         try
         {
             await Consumidores.WaitAsync(cancellationToken);
-            logger.LogInformation("Fila drenada; consumidores encerrados normalmente.");
+            RegistrarDrenagem(logger);
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("Prazo de encerramento esgotado; {Restantes} itens ficaram na fila e continuam 'Recebido' no banco.", fila.Profundidade);
+            RegistrarPrazoEsgotado(logger, fila.Profundidade);
         }
 
         await base.StopAsync(CancellationToken.None);
@@ -98,7 +96,7 @@ public sealed class ProcessadorDePedidosWorker(
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            logger.LogWarning("Consumidor {Numero} interrompido pelo encerramento forçado.", numero);
+            RegistrarInterrupcao(logger, numero);
         }
     }
 
@@ -129,7 +127,7 @@ public sealed class ProcessadorDePedidosWorker(
             {
                 Diagnostico.TelemetriaDoHub.PedidosProcessados.Add(1);
             }
-            logger.LogInformation("Pedido {PedidoId}: {Resultado} em {DuracaoMs:F1} ms.", job.PedidoId, resultado, duracao.TotalMilliseconds);
+            RegistrarResultado(logger, job.PedidoId, resultado, duracao.TotalMilliseconds);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -139,12 +137,35 @@ public sealed class ProcessadorDePedidosWorker(
         {
             // Falha visível, com o identificador do pedido, sem derrubar o consumidor.
             metricas.RegistrarFalha();
-            logger.LogError(excecao, "Falha ao processar o pedido {PedidoId} após {DuracaoMs:F1} ms.",
-                job.PedidoId, Stopwatch.GetElapsedTime(inicio).TotalMilliseconds);
+            RegistrarFalha(logger, excecao, job.PedidoId, Stopwatch.GetElapsedTime(inicio).TotalMilliseconds);
         }
         finally
         {
             metricas.Finalizar(job.PedidoId);
         }
     }
+
+    // Roteiro 8 (CA1848/CA1873): mensagens de log geradas em tempo de compilação. O
+    // gerador cria um delegate por mensagem e verifica o nível antes de montar os
+    // argumentos; no laço do consumidor isso evita boxing e arrays a cada item.
+    [LoggerMessage(Level = LogLevel.Information, Message = "Worker iniciado: {Consumidores} consumidores, capacidade {Capacidade}, modo {Modo}.")]
+    private static partial void RegistrarInicio(ILogger logger, int consumidores, int capacidade, System.Threading.Channels.BoundedChannelFullMode modo);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Encerrando: fila concluída com {Pendentes} itens para drenar.")]
+    private static partial void RegistrarEncerramento(ILogger logger, int pendentes);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Fila drenada; consumidores encerrados normalmente.")]
+    private static partial void RegistrarDrenagem(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Prazo de encerramento esgotado; {Restantes} itens ficaram na fila e continuam 'Recebido' no banco.")]
+    private static partial void RegistrarPrazoEsgotado(ILogger logger, int restantes);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Consumidor {Numero} interrompido pelo encerramento forçado.")]
+    private static partial void RegistrarInterrupcao(ILogger logger, int numero);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Pedido {PedidoId}: {Resultado} em {DuracaoMs:F1} ms.")]
+    private static partial void RegistrarResultado(ILogger logger, PedidoId pedidoId, ResultadoDoProcessamento resultado, double duracaoMs);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Falha ao processar o pedido {PedidoId} após {DuracaoMs:F1} ms.")]
+    private static partial void RegistrarFalha(ILogger logger, Exception excecao, PedidoId pedidoId, double duracaoMs);
 }

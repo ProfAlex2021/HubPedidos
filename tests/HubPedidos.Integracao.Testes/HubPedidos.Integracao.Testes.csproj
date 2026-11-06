@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Roteiro 8: testes de integração. Hospedam a API real em memória
+    (WebApplicationFactory<Program>) com SQLite em memória, substituindo só o banco
+    e, quando o teste pede, o consumidor da fila. Os testes unitários continuam em
+    HubPedidos.Tests, que não depende de hospedagem HTTP.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <RootNamespace>HubPedidos.Integracao.Testes</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Falhas controladas para provar que a revisão automatizada bloqueia (Etapa 4).
+    Nada disso entra no build normal; só scripts/revisao.ps1 -DemonstrarFalha liga:
+    - DemonstrarFalhaDeAnalisador: compila Demonstracoes/ExemploComProblemas.cs (CS8602);
+    - DemonstrarFalhaDeTeste: compila um teste que falha de propósito.
+  -->
+  <ItemGroup Condition="'$(DemonstrarFalhaDeAnalisador)' != 'true'">
+    <Compile Remove="Demonstracoes/ExemploComProblemas.cs" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(DemonstrarFalhaDeTeste)' == 'true'">
+    <DefineConstants>$(DefineConstants);DEMONSTRAR_FALHA_DE_TESTE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HubPedidos.Api\HubPedidos.Api.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Snapshots de contrato: lidos do diretório do código-fonte (revisão explícita no Git). -->
+    <None Include="Contratos\Snapshots\*.json" />
+  </ItemGroup>
+</Project>

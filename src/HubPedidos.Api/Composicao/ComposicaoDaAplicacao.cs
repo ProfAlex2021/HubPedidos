@@ -2,11 +2,11 @@ using HubPedidos.Api.Endpoints;
 using HubPedidos.Api.Seguranca;
 using HubPedidos.Api.TempoReal;
 using HubPedidos.Application.Composicao;
-using HubPedidos.Application.Notificacoes;
-using Microsoft.AspNetCore.Authentication.BearerToken;
 using HubPedidos.Application.Importacao;
+using HubPedidos.Application.Notificacoes;
 using HubPedidos.Application.Processamento.Fila;
 using HubPedidos.Infrastructure.Composicao;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 
 namespace HubPedidos.Api.Composicao;
 
