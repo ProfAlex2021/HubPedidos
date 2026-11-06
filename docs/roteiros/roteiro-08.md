@@ -212,10 +212,16 @@ Executado em 06/11/2026, Windows 11, PowerShell 5.1, `scripts/revisao.ps1 -Verif
   exercitam (importação em lote, parsers). Observação: o executor grava cada arquivo
   Cobertura em duplicata (mesmo conteúdo); isso não afeta os números.
 
-**Não verificado neste computador:** a execução no GitHub Actions (o repositório não foi
-publicado nem enviado por push, por instrução do professor) e o script no `pwsh` do Linux. O
-workflow só usa o próprio script e actions oficiais; a primeira execução no GitHub deve ser
-conferida na aba Actions.
+**Primeira execução no GitHub Actions (06/11/2026, `ubuntu-latest`, `pwsh`):** a revisão
+**reprovou na etapa testes** e o job de publicação foi **pulado**, como projetado. Com isso,
+o bloqueio foi visto também no CI. Dos 188 testes, só
+`GeradorDeCargaTestes.Aquecimento_fica_fora_e_erros_e_timeouts_sao_registrados` (Roteiro 5) falhou:
+o teste exigia latência de timeout ≥ 100 ms exatos, e no Linux o temporizador do
+`CancelAfter` pode disparar uma fração de milissegundo antes do que o `Stopwatch` mede.
+O defeito era do teste, não do gerador de carga. A correção (commit posterior à tag
+`roteiro-08`) tolera 5 ms de granularidade do temporizador. Um defeito real (latência zerada ou medida a partir do envio)
+continua sendo pego. Os resultados (TRX e cobertura) ficaram disponíveis como artefato
+`resultados-da-revisao` da execução.
 
 ## Versões utilizadas
 

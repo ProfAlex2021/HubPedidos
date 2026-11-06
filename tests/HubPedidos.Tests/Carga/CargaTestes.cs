@@ -81,9 +81,17 @@ public sealed class GeradorDeCargaTestes
         Assert.AreEqual(30, criacao.Erros);
         Assert.IsGreaterThan(0, consulta.Timeouts);
         Assert.AreEqual(consulta.Requisicoes, consulta.Sucessos + consulta.Timeouts);
-        Assert.IsTrue(janela.Amostras.Where(a => a.Desfecho == Desfecho.Timeout).All(a => a.LatenciaMs >= 100));
+        // O timeout entra INTEIRO na latência. A folga de 5 ms cobre só a granularidade do
+        // temporizador do CancelAfter, que no Linux pode disparar uma fração de milissegundo
+        // antes do que o Stopwatch mede (falha observada no GitHub Actions com limite exato).
+        // Um defeito real (latência medida a partir do envio do timeout, ou zerada) daria ~0 ms.
+        const double ToleranciaDoTemporizadorMs = 5;
+        var latenciasDeTimeout = janela.Amostras.Where(a => a.Desfecho == Desfecho.Timeout).Select(a => a.LatenciaMs).ToArray();
+        Assert.IsTrue(
+            latenciasDeTimeout.All(l => l >= 100 - ToleranciaDoTemporizadorMs),
+            $"Latências de timeout abaixo de {100 - ToleranciaDoTemporizadorMs} ms: {string.Join(", ", latenciasDeTimeout.Where(l => l < 100 - ToleranciaDoTemporizadorMs))}");
         // Os timeouts entram nos percentis: o p99 da consulta reflete a espera de ~100 ms.
-        Assert.IsGreaterThanOrEqualTo(100, consulta.Latencias.P99);
+        Assert.IsGreaterThanOrEqualTo(100 - ToleranciaDoTemporizadorMs, consulta.Latencias.P99);
     }
 
     private sealed class ServidorFalso(Func<HttpRequestMessage, int, CancellationToken, Task<HttpResponseMessage>> responder) : HttpMessageHandler
