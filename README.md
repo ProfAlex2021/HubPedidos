@@ -33,6 +33,14 @@ dotnet run --project src/HubPedidos.Api --launch-profile http
 A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 `src/HubPedidos.Api/HubPedidos.Api.http`.
 
+A partir do Roteiro 7, a consulta v2 e a página de acompanhamento (`http://localhost:5080/`)
+exigem login. Crie os usuários de teste (`ana`, `bruno`, `operador`) com senhas aleatórias
+em User Secrets e consulte as senhas com `dotnet user-secrets list --project src/HubPedidos.Api`:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/criar-usuarios-teste.ps1
+```
+
 ## Roteiros
 
 | Roteiro | Título | Guia | Tag |
@@ -43,6 +51,7 @@ A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 | 4 | Channels, SemaphoreSlim, coleções concorrentes e backpressure | [roteiro-04](docs/roteiros/roteiro-04.md) | `roteiro-04` |
 | 5 | BenchmarkDotNet, counters, traces, p95/p99 e testes de carga | [roteiro-05](docs/roteiros/roteiro-05.md) | `roteiro-05` |
 | 6 | Modularização, IoC, fronteiras e versionamento compatível de APIs | [roteiro-06](docs/roteiros/roteiro-06.md) | `roteiro-06` |
+| 7 | SignalR, reconexão, streaming, cache de resposta e ETags | [roteiro-07](docs/roteiros/roteiro-07.md) | `roteiro-07` |
 
 ## Estrutura
 
@@ -67,6 +76,8 @@ docs/adr/                   Registros de decisões arquiteturais
 
 Nenhuma senha, connection string ou chave é versionada. A connection string do SQLite
 fica em User Secrets (`scripts/configurar-desenvolvimento.ps1`) ou na variável de
-ambiente `ConnectionStrings__HubPedidos`. Quando um roteiro precisar
+ambiente `ConnectionStrings__HubPedidos`. As senhas dos usuários de teste também ficam em
+User Secrets (`scripts/criar-usuarios-teste.ps1`); nos testes automatizados, novas senhas
+aleatórias são geradas a cada execução e nunca são gravadas em disco. Quando um roteiro precisar
 de configuração sensível, o guia correspondente explica como defini-la com
 User Secrets ou variáveis de ambiente.

@@ -53,6 +53,9 @@ public interface IConsultasDePedidos
     Task<PedidoResponse?> ObterDetalheAsync(PedidoId id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<PedidoResponse>> ListarRelatorioAsync(int pagina, int tamanhoDaPagina, EstrategiaDeCarregamento estrategia, CancellationToken cancellationToken);
+
+    /// <summary>Roteiro 7: totais agregados por categoria (sem dados de clientes).</summary>
+    Task<IReadOnlyList<EstatisticaPorCategoria>> ContarPorCategoriaAsync(DateTime desdeUtc, CancellationToken cancellationToken);
 }
 
 /// <summary>Limites de paginação, parte do contrato das consultas.</summary>

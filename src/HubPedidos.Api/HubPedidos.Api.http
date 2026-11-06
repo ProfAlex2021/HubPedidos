@@ -130,11 +130,54 @@ GET {{HubPedidos_HostAddress}}/api/processamento/metricas
 ### Roteiro 6 - v1 explícita (cabeçalhos Deprecation, Sunset e Link)
 GET {{HubPedidos_HostAddress}}/api/v1/pedidos/{{criado.response.body.$.id}}
 
-### Roteiro 6 - v2 (contrato novo, mesmo pedido)
+### Roteiro 6 - v2 (contrato novo, mesmo pedido). A partir do Roteiro 7 exige o token (ver abaixo)
 GET {{HubPedidos_HostAddress}}/api/v2/pedidos/{{criado.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
 
 ### Roteiro 6 - versão não suportada -> 400 + api-supported-versions
 GET {{HubPedidos_HostAddress}}/api/v3/pedidos/{{criado.response.body.$.id}}
 
 ### Roteiro 6 - documentos OpenAPI por versão
 GET {{HubPedidos_HostAddress}}/openapi/v2.json
+
+# ---------------------------------------------------------------------------
+# Roteiro 7 - informe a senha da ana (dotnet user-secrets list --project src/HubPedidos.Api)
+# no lugar de "informe-a-senha" apenas na sua cópia local: NÃO faça commit dessa alteração.
+@senhaAna = informe-a-senha
+
+### Roteiro 7 - login (token bearer)
+# @name login
+POST {{HubPedidos_HostAddress}}/api/autenticacao/token
+Content-Type: application/json
+
+{ "usuario": "ana", "senha": "{{senhaAna}}" }
+
+### Roteiro 7 - pedido da ana (cliente-001)
+# @name pedidoDaAna
+POST {{HubPedidos_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{ "clienteId": "cliente-001", "regiao": "Sul", "prioridade": "Normal", "itens": [ { "sku": "A", "quantidade": 1, "precoUnitario": 10 } ] }
+
+### Roteiro 7 - GET v2: 200 com ETag e Cache-Control: private, no-cache
+# @name leitura
+GET {{HubPedidos_HostAddress}}/api/v2/pedidos/{{pedidoDaAna.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Roteiro 7 - If-None-Match com a ETag recebida: 304 sem corpo
+GET {{HubPedidos_HostAddress}}/api/v2/pedidos/{{pedidoDaAna.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+If-None-Match: {{leitura.response.headers.ETag}}
+
+### Roteiro 7 - If-Match obsoleto: 412 (extensão)
+POST {{HubPedidos_HostAddress}}/api/v2/pedidos/{{pedidoDaAna.response.body.$.id}}/cancelamento
+Authorization: Bearer {{login.response.body.$.accessToken}}
+If-Match: "sha256-versao-antiga"
+
+### Roteiro 7 - If-Match atual: 204
+POST {{HubPedidos_HostAddress}}/api/v2/pedidos/{{pedidoDaAna.response.body.$.id}}/cancelamento
+Authorization: Bearer {{login.response.body.$.accessToken}}
+If-Match: {{leitura.response.headers.ETag}}
+
+### Roteiro 7 - leitura pública com output cache (repita: X-Gerado-Em não muda por até 30 s)
+GET {{HubPedidos_HostAddress}}/api/estatisticas/categorias?dias=30

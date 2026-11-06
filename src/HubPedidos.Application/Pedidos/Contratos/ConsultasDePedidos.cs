@@ -22,6 +22,9 @@ public sealed record PaginaDeResultados<T>(IReadOnlyList<T> Itens, int Pagina, i
 /// <summary>Página por cursor (extensão): o cliente envia o cursor da última página.</summary>
 public sealed record PaginaPorCursor<T>(IReadOnlyList<T> Itens, string? ProximoCursor);
 
+/// <summary>Roteiro 7: estatística pública e agregada, sem dados individuais.</summary>
+public sealed record EstatisticaPorCategoria(string Categoria, int Quantidade, decimal ValorTotal);
+
 /// <summary>Filtros do painel. Todos opcionais; datas em UTC.</summary>
 public sealed record FiltroDePedidos(
     DateTime? CriadoDesdeUtc = null,

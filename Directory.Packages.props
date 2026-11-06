@@ -24,5 +24,7 @@
     <!-- Roteiro 6: documentos OpenAPI separados por versão; cliente HTTP em processo para testes de compatibilidade. -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
+    <!-- Roteiro 7: cliente .NET do SignalR, usado só nos testes do hub. -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
   </ItemGroup>
 </Project>

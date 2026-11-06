@@ -162,6 +162,20 @@ public sealed class ConsultasDePedidos(ContextoDePedidos contexto) : IConsultasD
         }
     }
 
+    /// <summary>Agregação feita no banco (GROUP BY); só totais saem da consulta.</summary>
+    public async Task<IReadOnlyList<EstatisticaPorCategoria>> ContarPorCategoriaAsync(DateTime desdeUtc, CancellationToken cancellationToken)
+    {
+        var linhas = await contexto.Pedidos
+            .Where(p => p.CriadoEmUtc >= desdeUtc)
+            .GroupBy(p => p.Categoria)
+            .Select(g => new { Categoria = g.Key, Quantidade = g.Count(), Centavos = g.Sum(p => p.ValorTotalCentavos) })
+            .ToListAsync(cancellationToken);
+
+        return [.. linhas
+            .OrderBy(l => l.Categoria)
+            .Select(l => new EstatisticaPorCategoria(l.Categoria.ToString(), l.Quantidade, Dinheiro.DeCentavos(l.Centavos)))];
+    }
+
     internal static IQueryable<PedidoRegistro> Filtrar(IQueryable<PedidoRegistro> consulta, FiltroDePedidos filtro)
     {
         // Cada valor do usuário entra como variável local capturada: o EF a transforma em

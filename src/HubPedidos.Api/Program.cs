@@ -48,11 +48,21 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
 });
 app.UseStatusCodePages();
 
+// Roteiro 7: página de acompanhamento (wwwroot) e, nesta ordem, autenticação,
+// autorização e só então o output cache: o cache nunca vê uma requisição antes de a
+// identidade e a permissão terem sido avaliadas.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseOutputCache();
+
 app.MapOpenApi(); // /openapi/v1.json e /openapi/v2.json
 app.MapPedidosEndpoints();
 app.MapConsultaDePedidoVersionada();
 app.MapProcessadoresEndpoints();
 app.MapProcessamentoEndpoints();
+app.MapTempoRealEndpoints();
 
 await app.RunAsync();
 

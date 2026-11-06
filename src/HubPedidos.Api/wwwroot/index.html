@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acompanhamento de pedido — Hub de Pedidos</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.4; }
+    fieldset { margin-bottom: 1rem; border-radius: 8px; }
+    label { display: inline-block; min-width: 6rem; }
+    input { padding: .3rem; margin: .2rem 0; width: 22rem; max-width: 100%; }
+    button { padding: .35rem .8rem; margin: .2rem .2rem .2rem 0; }
+    #estado { font-weight: bold; padding: .2rem .6rem; border-radius: 6px; }
+    .conectado { background: #c8f7c5; color: #14532d; }
+    .reconectando { background: #fde68a; color: #713f12; }
+    .desconectado { background: #fecaca; color: #7f1d1d; }
+    pre { background: rgba(127,127,127,.12); padding: .6rem; border-radius: 6px; overflow-x: auto; }
+    #eventos li { font-family: ui-monospace, monospace; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <h1>Acompanhamento de pedido</h1>
+
+  <fieldset>
+    <legend>1. Entrar</legend>
+    <label for="usuario">Usuário</label> <input id="usuario" autocomplete="username"><br>
+    <label for="senha">Senha</label> <input id="senha" type="password" autocomplete="current-password"><br>
+    <button id="entrar">Entrar e conectar</button>
+    <span>Conexão: <span id="estado" class="desconectado">desconectado</span></span>
+    <button id="reconectar" hidden>Conectar novamente</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>2. Pedido</legend>
+    <label for="pedido">Id</label> <input id="pedido" placeholder="identificador do pedido"><br>
+    <!-- Ações que dependem da conexão ficam desabilitadas enquanto ela não estiver ativa. -->
+    <button id="acompanhar" disabled>Acompanhar</button>
+    <button id="cancelar" disabled>Cancelar (If-Match)</button>
+    <p id="mensagem" role="status"></p>
+    <pre id="representacao">(nenhum pedido carregado)</pre>
+  </fieldset>
+
+  <h2>Eventos</h2>
+  <ul id="eventos"></ul>
+
+  <script src="lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+  <script src="js/acompanhamento.js"></script>
+</body>
+</html>

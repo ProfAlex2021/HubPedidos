@@ -96,9 +96,10 @@ public sealed class VersionamentoTestes
     public async Task V2_tem_o_contrato_novo_e_a_mesma_semantica()
     {
         await using var fabrica = new FabricaComBancoTemporario();
-        var http = fabrica.CreateClient();
-        var clienteV1 = new ClienteFrontEndV1(http);
+        var clienteV1 = new ClienteFrontEndV1(fabrica.CreateClient());
         var id = await clienteV1.CriarAsync("cliente-v2", 7.25m, 2);
+        // Roteiro 7: a v2 exige autenticação; o operador pode ver qualquer pedido.
+        var http = await fabrica.CriarClienteAutenticadoAsync("operador");
 
         var v2 = await http.GetAsync($"/api/v2/pedidos/{id}");
         using var json = JsonDocument.Parse(await v2.Content.ReadAsStringAsync());
