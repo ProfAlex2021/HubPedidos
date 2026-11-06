@@ -1,35 +1,33 @@
 using System.Buffers.Text;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using HubPedidos.Application.Pedidos.Contratos;
+using HubPedidos.Application.Pedidos.Portas;
 using HubPedidos.Domain.Pedidos;
 using HubPedidos.Infrastructure.Persistencia;
 using HubPedidos.Infrastructure.Persistencia.Modelos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HubPedidos.Infrastructure.Consultas;
 
-/// <summary>Como o relatório carrega pedidos e itens (comparação da etapa 2.4).</summary>
-public enum EstrategiaDeCarregamento
-{
-    /// <summary>Projeção com coleção aninhada: um comando, só as colunas usadas.</summary>
-    Projecao,
-
-    /// <summary>Entidades completas com Include + AsNoTracking: um comando, todas as colunas.</summary>
-    Include,
-
-    /// <summary>Projeção com AsSplitQuery: dois comandos, sem duplicar o cabeçalho por item.</summary>
-    Dividida,
-}
-
 /// <summary>
-/// Consultas de leitura do painel. Nada aqui altera dados: projeções direto para DTO
-/// (que não são rastreadas) e, onde entidades são lidas, <c>AsNoTracking</c>.
+/// Consultas de leitura do painel; implementa a porta <see cref="IConsultasDePedidos"/>.
+/// Nada aqui altera dados: projeções direto para DTO (que não são rastreadas) e, onde
+/// entidades são lidas, <c>AsNoTracking</c>.
 /// </summary>
-public sealed class ConsultasDePedidos(ContextoDePedidos contexto)
+public sealed class ConsultasDePedidos(ContextoDePedidos contexto) : IConsultasDePedidos
 {
-    public const int TamanhoMaximoDaPagina = 100;
+    public const int TamanhoMaximoDaPagina = LimitesDeConsulta.TamanhoMaximoDaPagina;
+
+    /// <summary>
+    /// Pela porta, o detalhe usa a consulta compilada (decisão medida no Roteiro 3).
+    /// A versão comum continua pública para comparação e testes.
+    /// </summary>
+    Task<PedidoResponse?> IConsultasDePedidos.ObterDetalheAsync(PedidoId id, CancellationToken cancellationToken) =>
+        ObterDetalheCompiladoAsync(id);
 
     /// <summary>Projeção do detalhe, compartilhada pelas versões normal e compilada.</summary>
     private static readonly Expression<Func<PedidoRegistro, LinhaDeDetalhe>> ProjecaoDeDetalhe = p => new LinhaDeDetalhe(
@@ -48,10 +46,19 @@ public sealed class ConsultasDePedidos(ContextoDePedidos contexto)
         p.Itens.OrderBy(i => i.Posicao).Select(i => new LinhaDeItem(i.Sku, i.Quantidade, i.PrecoUnitarioCentavos)).ToList());
 
     /// <summary>
-    /// Consulta compilada (etapa 3): consulta estável, repetida e com parâmetro escalar.
-    /// Evita, a cada chamada, comparar a árvore de expressão com o cache interno do EF.
+    /// Consulta compilada (etapa 3 do Roteiro 3): consulta estável, repetida e com
+    /// parâmetro escalar. Evita, a cada chamada, comparar a árvore de expressão com o
+    /// cache interno do EF.
     /// </summary>
-    private static readonly Func<ContextoDePedidos, Guid, Task<LinhaDeDetalhe?>> DetalheCompilado =
+    /// <remarks>
+    /// Correção no Roteiro 6: um delegate compilado só pode ser usado com UM modelo do EF.
+    /// O delegate estático único falhou quando vários hosts (testes de integração) criaram
+    /// modelos distintos no mesmo processo. Agora há um delegate por modelo; em produção
+    /// existe um único modelo, então o comportamento medido não muda.
+    /// </remarks>
+    private static readonly ConditionalWeakTable<IModel, Func<ContextoDePedidos, Guid, Task<LinhaDeDetalhe?>>> DetalheCompiladoPorModelo = new();
+
+    private static Func<ContextoDePedidos, Guid, Task<LinhaDeDetalhe?>> CompilarDetalhe() =>
         EF.CompileAsyncQuery((ContextoDePedidos c, Guid id) =>
             c.Pedidos.Where(p => p.Id == id).Select(ProjecaoDeDetalhe).FirstOrDefault());
 
@@ -123,7 +130,8 @@ public sealed class ConsultasDePedidos(ContextoDePedidos contexto)
     /// <summary>Mesmo resultado de <see cref="ObterDetalheAsync"/>, via consulta compilada.</summary>
     public async Task<PedidoResponse?> ObterDetalheCompiladoAsync(PedidoId id)
     {
-        var linha = await DetalheCompilado(contexto, id.Valor);
+        var consulta = DetalheCompiladoPorModelo.GetValue(contexto.Model, _ => CompilarDetalhe());
+        var linha = await consulta(contexto, id.Valor);
         return linha is null ? null : ParaResposta(linha);
     }
 

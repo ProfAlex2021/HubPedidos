@@ -65,7 +65,11 @@ public static class ExperimentoDeBackpressure
                 .AddSingleton(limitador)
                 .AddSingleton(TimeProvider.System)
                 .AddScoped(_ => new ContextoDePedidos(opcoesDoEf))
-                .AddScoped<IProcessamentoDePedido, ProcessamentoDePedidoEfCore>();
+                .AddScoped<IProcessamentoDePedido, ProcessamentoDePedidoEfCore>()
+                // Roteiro 6: o worker resolve a execução (processa e notifica).
+                .AddSingleton<HubPedidos.Application.Notificacoes.INotificadorDePedidos>(
+                    new HubPedidos.Infrastructure.Notificacoes.NotificadorPorLog(NullLogger<HubPedidos.Infrastructure.Notificacoes.NotificadorPorLog>.Instance))
+                .AddScoped<ExecucaoDoProcessamento>();
             await using var provedor = servicos.BuildServiceProvider();
 
             var metricas = new MetricasDoProcessamento();

@@ -126,3 +126,15 @@ POST {{HubPedidos_HostAddress}}/api/processamento/pendentes?limite=150
 
 ### Roteiro 4 - métricas: profundidade, aceitos, rejeitados, descartados, processados, espera, pico no banco
 GET {{HubPedidos_HostAddress}}/api/processamento/metricas
+
+### Roteiro 6 - v1 explícita (cabeçalhos Deprecation, Sunset e Link)
+GET {{HubPedidos_HostAddress}}/api/v1/pedidos/{{criado.response.body.$.id}}
+
+### Roteiro 6 - v2 (contrato novo, mesmo pedido)
+GET {{HubPedidos_HostAddress}}/api/v2/pedidos/{{criado.response.body.$.id}}
+
+### Roteiro 6 - versão não suportada -> 400 + api-supported-versions
+GET {{HubPedidos_HostAddress}}/api/v3/pedidos/{{criado.response.body.$.id}}
+
+### Roteiro 6 - documentos OpenAPI por versão
+GET {{HubPedidos_HostAddress}}/openapi/v2.json

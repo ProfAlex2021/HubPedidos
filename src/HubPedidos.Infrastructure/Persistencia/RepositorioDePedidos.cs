@@ -1,23 +1,31 @@
+using HubPedidos.Application.Pedidos.Portas;
 using HubPedidos.Application.Processamento;
 using HubPedidos.Domain.Pedidos;
 using Microsoft.EntityFrameworkCore;
 
 namespace HubPedidos.Infrastructure.Persistencia;
 
-/// <summary>Resultado de uma tentativa de cancelamento.</summary>
-public enum ResultadoDoCancelamento
-{
-    Cancelado,
-    NaoEncontrado,
-    SituacaoNaoPermite,
-}
-
 /// <summary>
-/// Escrita de pedidos. Recebe o contexto por injeção (tempo de vida "scoped": um
+/// Escrita de pedidos com EF Core; implementa a porta <see cref="IRepositorioDePedidos"/>
+/// declarada pela aplicação. Recebe o contexto por injeção (tempo de vida "scoped": um
 /// contexto por requisição, nunca compartilhado entre threads).
 /// </summary>
-public sealed class RepositorioDePedidos(ContextoDePedidos contexto)
+public sealed class RepositorioDePedidos(ContextoDePedidos contexto) : IRepositorioDePedidos
 {
+    public Task<bool> ExisteAsync(PedidoId id, CancellationToken cancellationToken) =>
+        contexto.Pedidos.AnyAsync(p => p.Id == id.Valor, cancellationToken);
+
+    public async Task<IReadOnlyList<PedidoId>> ListarPendentesAsync(int limite, CancellationToken cancellationToken)
+    {
+        var ids = await contexto.Pedidos.AsNoTracking()
+            .Where(p => p.Situacao == SituacaoPedido.Recebido)
+            .OrderBy(p => p.Numero)
+            .Select(p => p.Id)
+            .Take(limite)
+            .ToListAsync(cancellationToken);
+        return [.. ids.Select(id => new PedidoId(id))];
+    }
+
     public async Task AdicionarAsync(
         Pedido pedido,
         ResultadoClassificacao classificacao,

@@ -1,6 +1,7 @@
 using HubPedidos.Application.Processamento.Fila;
 using HubPedidos.Domain.Pedidos;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HubPedidos.Tests.Processamento.Apoio;
@@ -31,6 +32,11 @@ internal sealed class AmbienteDoWorker : IAsyncDisposable
         Fila = new FilaDeProcessamento(opcoes, Metricas);
         var servicos = new ServiceCollection();
         registrarProcessamento(servicos);
+        // Roteiro 6: o worker resolve ExecucaoDoProcessamento (processa e notifica).
+        Notificador = new Aplicacao.NotificadorDeTeste();
+        servicos.AddSingleton<HubPedidos.Application.Notificacoes.INotificadorDePedidos>(Notificador);
+        servicos.TryAddSingleton(TimeProvider.System);
+        servicos.AddScoped<ExecucaoDoProcessamento>();
         _provedor = servicos.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         Worker = new ProcessadorDePedidosWorker(
             Fila, Metricas, _provedor.GetRequiredService<IServiceScopeFactory>(), NullLogger<ProcessadorDePedidosWorker>.Instance);
@@ -40,6 +46,8 @@ internal sealed class AmbienteDoWorker : IAsyncDisposable
         new(opcoes, servicos => servicos.AddSingleton<IProcessamentoDePedido>(falso));
 
     public MetricasDoProcessamento Metricas { get; }
+
+    internal Aplicacao.NotificadorDeTeste Notificador { get; }
 
     public FilaDeProcessamento Fila { get; }
 

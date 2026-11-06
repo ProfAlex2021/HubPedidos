@@ -1,4 +1,5 @@
 using HubPedidos.Application.Pedidos.Contratos;
+using HubPedidos.Application.Pedidos.Portas;
 using HubPedidos.Domain.Pedidos;
 using HubPedidos.Infrastructure.Consultas;
 using HubPedidos.Infrastructure.Persistencia;

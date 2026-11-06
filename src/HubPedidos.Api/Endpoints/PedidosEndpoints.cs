@@ -1,70 +1,65 @@
 using HubPedidos.Application.Importacao;
 using HubPedidos.Application.Pedidos;
 using HubPedidos.Application.Pedidos.Contratos;
+using HubPedidos.Application.Pedidos.Portas;
 using HubPedidos.Domain.Pedidos;
-using HubPedidos.Infrastructure.Consultas;
-using HubPedidos.Infrastructure.Persistencia;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HubPedidos.Api.Endpoints;
 
-/// <summary>Endpoints de pedidos (Minimal APIs).</summary>
+/// <summary>
+/// Endpoints de pedidos (Minimal APIs). Desde o Roteiro 6 dependem apenas de serviços e
+/// portas da aplicação: nenhum tipo de EF Core ou da Infrastructure aparece aqui
+/// (verificado por teste arquitetural).
+/// </summary>
 public static class PedidosEndpoints
 {
     public static IEndpointRouteBuilder MapPedidosEndpoints(this IEndpointRouteBuilder rotas)
     {
         rotas.MapPost("/api/pedidos", ReceberPedidoAsync)
-            .WithName("ReceberPedido");
+            .WithName("ReceberPedido").WithGroupName("v1");
 
         // Roteiro 2: o corpo é lido como stream (sem binding para string) e a resposta
         // é escrita progressivamente em NDJSON.
         rotas.MapPost("/api/pedidos/lotes", ImportarLoteAsync)
-            .WithName("ImportarLote")
+            .WithName("ImportarLote").WithGroupName("v1")
             .Accepts<string>("text/plain")
             .Produces(StatusCodes.Status200OK, contentType: "application/x-ndjson");
 
-        // Roteiro 3: consultas e atualização persistidas.
-        rotas.MapGet("/api/pedidos", ListarAsync).WithName("ListarPedidos");
-        rotas.MapGet("/api/pedidos/cursor", ListarPorCursorAsync).WithName("ListarPedidosPorCursor");
-        rotas.MapGet("/api/pedidos/{id}", ObterAsync).WithName("ObterPedido");
-        rotas.MapPost("/api/pedidos/{id}/cancelamento", CancelarAsync).WithName("CancelarPedido");
-        rotas.MapGet("/api/relatorios/pedidos", RelatorioAsync).WithName("RelatorioDePedidos");
+        // Roteiro 3: consultas e atualização persistidas. (O detalhe por id está em
+        // ConsultaDePedidoVersionadaEndpoints desde o Roteiro 6.)
+        rotas.MapGet("/api/pedidos", ListarAsync).WithName("ListarPedidos").WithGroupName("v1");
+        rotas.MapGet("/api/pedidos/cursor", ListarPorCursorAsync).WithName("ListarPedidosPorCursor").WithGroupName("v1");
+        rotas.MapPost("/api/pedidos/{id}/cancelamento", CancelarAsync).WithName("CancelarPedido").WithGroupName("v1");
+        rotas.MapGet("/api/relatorios/pedidos", RelatorioAsync).WithName("RelatorioDePedidos").WithGroupName("v1");
 
         return rotas;
     }
 
     /// <summary>
-    /// Recebe o DTO, delega ao caso de uso, persiste o pedido aceito e traduz o
+    /// Recebe o DTO, delega ao caso de uso (que valida, persiste e notifica) e traduz o
     /// resultado para HTTP. Nenhum tipo do domínio aparece na resposta.
     /// </summary>
     public static async Task<Results<Created<PedidoResponse>, ValidationProblem, ProblemHttpResult>> ReceberPedidoAsync(
         CriarPedidoRequest? requisicao,
-        ServicoDeRecepcaoDePedidos servico,
-        RepositorioDePedidos repositorio,
+        ServicoDePedidos servico,
         CancellationToken cancellationToken)
     {
-        switch (servico.Receber(requisicao))
+        return await servico.CriarAsync(requisicao, cancellationToken) switch
         {
-            case ResultadoDaRecepcao.Aceito aceito:
-                await repositorio.AdicionarAsync(aceito.Entidade, aceito.Classificacao, aceito.Processamento, cancellationToken);
-                return TypedResults.Created($"/api/pedidos/{aceito.Pedido.Id}", aceito.Pedido);
-
-            case ResultadoDaRecepcao.DadosInvalidos invalidos:
-                return TypedResults.ValidationProblem(
-                    invalidos.Erros
-                        .GroupBy(erro => erro.Campo)
-                        .ToDictionary(grupo => grupo.Key, grupo => grupo.Select(erro => erro.Mensagem).ToArray()));
-
-            case ResultadoDaRecepcao.Rejeitado rejeitado:
-                return TypedResults.Problem(
-                    rejeitado.Motivo,
-                    statusCode: StatusCodes.Status422UnprocessableEntity,
-                    title: "Pedido não classificável");
-
-            default:
-                throw new InvalidOperationException("Resultado de recepção desconhecido.");
-        }
+            ResultadoDaRecepcao.Aceito aceito =>
+                TypedResults.Created($"/api/pedidos/{aceito.Pedido.Id}", aceito.Pedido),
+            ResultadoDaRecepcao.DadosInvalidos invalidos => TypedResults.ValidationProblem(
+                invalidos.Erros
+                    .GroupBy(erro => erro.Campo)
+                    .ToDictionary(grupo => grupo.Key, grupo => grupo.Select(erro => erro.Mensagem).ToArray())),
+            ResultadoDaRecepcao.Rejeitado rejeitado => TypedResults.Problem(
+                rejeitado.Motivo,
+                statusCode: StatusCodes.Status422UnprocessableEntity,
+                title: "Pedido não classificável"),
+            _ => throw new InvalidOperationException("Resultado de recepção desconhecido."),
+        };
     }
 
     /// <summary>
@@ -81,7 +76,7 @@ public static class PedidosEndpoints
     /// <summary>Painel: filtros, ordenação determinística, paginação e total.</summary>
     public static async Task<Results<Ok<PaginaDeResultados<PedidoResumo>>, ValidationProblem>> ListarAsync(
         [AsParameters] ParametrosDoPainel parametros,
-        ConsultasDePedidos consultas,
+        IConsultasDePedidos consultas,
         CancellationToken cancellationToken)
     {
         if (parametros.Validar() is { } erros)
@@ -93,11 +88,11 @@ public static class PedidosEndpoints
             parametros.ParaFiltro(), parametros.Pagina ?? 1, parametros.Tamanho ?? 20, cancellationToken));
     }
 
-    /// <summary>Extensão: mesma listagem, paginada por cursor.</summary>
+    /// <summary>Extensão do Roteiro 3: mesma listagem, paginada por cursor.</summary>
     public static async Task<Results<Ok<PaginaPorCursor<PedidoResumo>>, ValidationProblem>> ListarPorCursorAsync(
         [AsParameters] ParametrosDoPainel parametros,
         [FromQuery] string? apos,
-        ConsultasDePedidos consultas,
+        IConsultasDePedidos consultas,
         CancellationToken cancellationToken)
     {
         if (parametros.Validar() is { } erros)
@@ -116,22 +111,10 @@ public static class PedidosEndpoints
         }
     }
 
-    /// <summary>
-    /// Detalhe com itens em uma consulta. O <see cref="PedidoId"/> é convertido pelo
-    /// <c>TryParse</c> do value object (Roteiro 1): identificador inválido vira 400.
-    /// Usa a consulta compilada: medida 0,72× o tempo e 0,81× a alocação da comum
-    /// (docs/roteiros/roteiro-03.md).
-    /// </summary>
-    public static async Task<Results<Ok<PedidoResponse>, NotFound>> ObterAsync(
-        PedidoId id, ConsultasDePedidos consultas) =>
-        await consultas.ObterDetalheCompiladoAsync(id) is { } pedido
-            ? TypedResults.Ok(pedido)
-            : TypedResults.NotFound();
-
-    /// <summary>Atualização com tracking pelo mesmo contexto (ver RepositorioDePedidos).</summary>
+    /// <summary>Atualização com tracking pelo mesmo contexto; notifica depois de persistir.</summary>
     public static async Task<Results<NoContent, NotFound, ProblemHttpResult>> CancelarAsync(
-        PedidoId id, RepositorioDePedidos repositorio, CancellationToken cancellationToken) =>
-        await repositorio.CancelarAsync(id, cancellationToken) switch
+        PedidoId id, ServicoDePedidos servico, CancellationToken cancellationToken) =>
+        await servico.CancelarAsync(id, cancellationToken) switch
         {
             ResultadoDoCancelamento.Cancelado => TypedResults.NoContent(),
             ResultadoDoCancelamento.NaoEncontrado => TypedResults.NotFound(),
@@ -140,17 +123,17 @@ public static class PedidosEndpoints
 
     /// <summary>Relatório de pedidos com itens (sem N+1) com a estratégia de carregamento escolhida.</summary>
     public static async Task<Results<Ok<IReadOnlyList<PedidoResponse>>, ValidationProblem>> RelatorioAsync(
-        ConsultasDePedidos consultas,
+        IConsultasDePedidos consultas,
         CancellationToken cancellationToken,
         int pagina = 1,
         int tamanho = 20,
         EstrategiaDeCarregamento estrategia = EstrategiaDeCarregamento.Projecao)
     {
-        if (pagina < 1 || tamanho is < 1 or > ConsultasDePedidos.TamanhoMaximoDaPagina)
+        if (pagina < 1 || tamanho is < 1 or > LimitesDeConsulta.TamanhoMaximoDaPagina)
         {
             return TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["pagina"] = [$"Página >= 1 e tamanho entre 1 e {ConsultasDePedidos.TamanhoMaximoDaPagina}."],
+                ["pagina"] = [$"Página >= 1 e tamanho entre 1 e {LimitesDeConsulta.TamanhoMaximoDaPagina}."],
             });
         }
 
@@ -176,9 +159,9 @@ public sealed record ParametrosDoPainel(
             erros["pagina"] = ["A página deve ser maior ou igual a 1."];
         }
 
-        if (Tamanho is < 1 or > ConsultasDePedidos.TamanhoMaximoDaPagina)
+        if (Tamanho is < 1 or > LimitesDeConsulta.TamanhoMaximoDaPagina)
         {
-            erros["tamanho"] = [$"O tamanho deve estar entre 1 e {ConsultasDePedidos.TamanhoMaximoDaPagina}."];
+            erros["tamanho"] = [$"O tamanho deve estar entre 1 e {LimitesDeConsulta.TamanhoMaximoDaPagina}."];
         }
 
         if (Categoria is not null && (!Enum.TryParse<CategoriaProcessamento>(Categoria, true, out var c) || !Enum.IsDefined(c)))

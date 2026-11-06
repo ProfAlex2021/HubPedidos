@@ -91,7 +91,8 @@ public sealed class FilaDeProcessamentoTestes
         async Task<(IResult Resultado, HttpResponse Resposta)> SolicitarAsync(PedidoId id)
         {
             var http = new DefaultHttpContext();
-            var resultado = await ProcessamentoEndpoints.SolicitarProcessamentoAsync(id, fila, contexto, http.Response, CancellationToken.None);
+            var resultado = await ProcessamentoEndpoints.SolicitarProcessamentoAsync(
+                id, fila, new HubPedidos.Infrastructure.Persistencia.RepositorioDePedidos(contexto), http.Response, CancellationToken.None);
             return (resultado.Result, http.Response);
         }
 

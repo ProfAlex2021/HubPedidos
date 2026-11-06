@@ -42,6 +42,7 @@ A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 | 3 | Consultas previsíveis, projeções, tracking, consultas compiladas e JSON | [roteiro-03](docs/roteiros/roteiro-03.md) | `roteiro-03` |
 | 4 | Channels, SemaphoreSlim, coleções concorrentes e backpressure | [roteiro-04](docs/roteiros/roteiro-04.md) | `roteiro-04` |
 | 5 | BenchmarkDotNet, counters, traces, p95/p99 e testes de carga | [roteiro-05](docs/roteiros/roteiro-05.md) | `roteiro-05` |
+| 6 | Modularização, IoC, fronteiras e versionamento compatível de APIs | [roteiro-06](docs/roteiros/roteiro-06.md) | `roteiro-06` |
 
 ## Estrutura
 
@@ -59,6 +60,7 @@ tools/
 tests/
   HubPedidos.Tests/         Testes MSTest (Microsoft.Testing.Platform)
 docs/roteiros/              Guia de cada roteiro: execução, decisões e evidências
+docs/adr/                   Registros de decisões arquiteturais
 ```
 
 ## Segredos

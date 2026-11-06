@@ -41,19 +41,24 @@ public sealed class ServicoDeRecepcaoDePedidosTestes
     public async Task Endpoint_traduz_resultados_para_respostas_tipadas()
     {
         // Roteiro 3: o endpoint passou a persistir o pedido aceito (201 Created).
+        // Roteiro 6: via ServicoDePedidos, que também notifica depois de persistir.
         using var banco = new Persistencia.BancoDeTeste();
         using var contexto = banco.CriarContexto();
         var repositorio = new HubPedidos.Infrastructure.Persistencia.RepositorioDePedidos(contexto);
+        var notificador = new NotificadorDeTeste();
+        var servicoDePedidos = new ServicoDePedidos(_servico, repositorio, notificador, TimeProvider.System);
 
         var valido = await PedidosEndpoints.ReceberPedidoAsync(
-            new CriarPedidoRequest("c", "Sul", "Normal", [new ItemPedidoRequest("A", 1, 10m)]), _servico, repositorio, CancellationToken.None);
+            new CriarPedidoRequest("c", "Sul", "Normal", [new ItemPedidoRequest("A", 1, 10m)]), servicoDePedidos, CancellationToken.None);
         var invalido = await PedidosEndpoints.ReceberPedidoAsync(
-            new CriarPedidoRequest("", "Sul", "Normal", [new ItemPedidoRequest("A", 0, 10m)]), _servico, repositorio, CancellationToken.None);
+            new CriarPedidoRequest("", "Sul", "Normal", [new ItemPedidoRequest("A", 0, 10m)]), servicoDePedidos, CancellationToken.None);
 
         var criado = Assert.IsInstanceOfType<Created<PedidoResponse>>(valido.Result);
         Assert.AreEqual("Padrao", criado.Value!.Categoria);
         Assert.AreEqual($"/api/pedidos/{IdFixo}", criado.Location);
         Assert.AreEqual(1, contexto.Pedidos.Count());
+        // Uma notificação, só para o pedido aceito (e só depois de gravado).
+        Assert.AreEqual(IdFixo, notificador.Publicadas.Single().PedidoId);
 
         var problema = Assert.IsInstanceOfType<ValidationProblem>(invalido.Result);
         CollectionAssert.AreEquivalent(

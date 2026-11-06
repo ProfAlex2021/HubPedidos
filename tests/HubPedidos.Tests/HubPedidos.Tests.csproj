@@ -12,6 +12,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" />
+    <!-- Roteiro 6: hospeda a API em processo para o teste do cliente v1. -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\HubPedidos.Domain\HubPedidos.Domain.csproj" />

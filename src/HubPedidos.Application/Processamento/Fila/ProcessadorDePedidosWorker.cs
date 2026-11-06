@@ -118,8 +118,10 @@ public sealed class ProcessadorDePedidosWorker(
         {
             // Um escopo por item: DbContext e demais serviços scoped não são compartilhados.
             await using var escopo = fabricaDeEscopos.CreateAsyncScope();
-            var processamento = escopo.ServiceProvider.GetRequiredService<IProcessamentoDePedido>();
-            var resultado = await processamento.ProcessarAsync(job.PedidoId, token);
+            // Único ponto em que o contêiner é consultado: o worker é infraestrutura de
+            // composição (cria um escopo por item). O caso de uso recebe tudo por construtor.
+            var execucao = escopo.ServiceProvider.GetRequiredService<ExecucaoDoProcessamento>();
+            var resultado = await execucao.ExecutarAsync(job.PedidoId, token);
 
             var duracao = Stopwatch.GetElapsedTime(inicio);
             metricas.RegistrarResultado(resultado, duracao);

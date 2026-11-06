@@ -1,8 +1,7 @@
+using HubPedidos.Application.Pedidos.Portas;
 using HubPedidos.Application.Processamento.Fila;
 using HubPedidos.Domain.Pedidos;
-using HubPedidos.Infrastructure.Persistencia;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
 
 namespace HubPedidos.Api.Endpoints;
 
@@ -14,9 +13,9 @@ public static class ProcessamentoEndpoints
 
     public static IEndpointRouteBuilder MapProcessamentoEndpoints(this IEndpointRouteBuilder rotas)
     {
-        rotas.MapPost("/api/pedidos/{id}/processamento", SolicitarProcessamentoAsync).WithName("SolicitarProcessamento");
-        rotas.MapPost("/api/processamento/pendentes", EnfileirarPendentesAsync).WithName("EnfileirarPendentes");
-        rotas.MapGet("/api/processamento/metricas", ObterMetricas).WithName("MetricasDoProcessamento");
+        rotas.MapPost("/api/pedidos/{id}/processamento", SolicitarProcessamentoAsync).WithName("SolicitarProcessamento").WithGroupName("v1");
+        rotas.MapPost("/api/processamento/pendentes", EnfileirarPendentesAsync).WithName("EnfileirarPendentes").WithGroupName("v1");
+        rotas.MapGet("/api/processamento/metricas", ObterMetricas).WithName("MetricasDoProcessamento").WithGroupName("v1");
         return rotas;
     }
 
@@ -28,11 +27,11 @@ public static class ProcessamentoEndpoints
     public static async Task<Results<Accepted, NotFound, ProblemHttpResult>> SolicitarProcessamentoAsync(
         PedidoId id,
         FilaDeProcessamento fila,
-        ContextoDePedidos contexto,
+        IRepositorioDePedidos repositorio,
         HttpResponse resposta,
         CancellationToken cancellationToken)
     {
-        if (!await contexto.Pedidos.AnyAsync(p => p.Id == id.Valor, cancellationToken))
+        if (!await repositorio.ExisteAsync(id, cancellationToken))
         {
             return TypedResults.NotFound();
         }
@@ -64,7 +63,7 @@ public static class ProcessamentoEndpoints
     /// </summary>
     public static async Task<Results<Ok<int>, ProblemHttpResult>> EnfileirarPendentesAsync(
         FilaDeProcessamento fila,
-        ContextoDePedidos contexto,
+        IRepositorioDePedidos repositorio,
         CancellationToken cancellationToken,
         int limite = 500)
     {
@@ -74,19 +73,14 @@ public static class ProcessamentoEndpoints
         }
 
         // Os identificadores são lidos antes: nenhum DbContext fica aberto enquanto espera a fila.
-        var pendentes = await contexto.Pedidos.AsNoTracking()
-            .Where(p => p.Situacao == SituacaoPedido.Recebido)
-            .OrderBy(p => p.Numero)
-            .Select(p => p.Id)
-            .Take(limite)
-            .ToListAsync(cancellationToken);
+        var pendentes = await repositorio.ListarPendentesAsync(limite, cancellationToken);
 
         var enfileirados = 0;
         try
         {
             foreach (var id in pendentes)
             {
-                await fila.EnfileirarAsync(new PedidoId(id), cancellationToken);
+                await fila.EnfileirarAsync(id, cancellationToken);
                 enfileirados++;
             }
         }

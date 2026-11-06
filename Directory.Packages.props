@@ -21,5 +21,8 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
     <!-- Roteiro 4: BackgroundService e IServiceScopeFactory na camada de aplicação (só abstrações). -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13" />
+    <!-- Roteiro 6: documentos OpenAPI separados por versão; cliente HTTP em processo para testes de compatibilidade. -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
   </ItemGroup>
 </Project>
