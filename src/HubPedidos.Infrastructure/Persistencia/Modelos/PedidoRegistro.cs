@@ -38,6 +38,9 @@ public sealed class PedidoRegistro
 
     public DateTime CriadoEmUtc { get; set; }
 
+    /// <summary>Roteiro 4: preenchido uma única vez pelo processamento (idempotência persistida).</summary>
+    public DateTime? ProcessadoEmUtc { get; set; }
+
     public long ValorTotalCentavos { get; set; }
 
     /// <summary>Tipo complexo: colunas da própria tabela (ou JSON no contexto alternativo).</summary>

@@ -6,4 +6,8 @@
   <ItemGroup>
     <ProjectReference Include="..\HubPedidos.Domain\HubPedidos.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Roteiro 4: worker em segundo plano. Somente abstrações; nenhum host concreto. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
 </Project>

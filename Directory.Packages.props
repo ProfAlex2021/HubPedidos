@@ -19,5 +19,7 @@
     -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
+    <!-- Roteiro 4: BackgroundService e IServiceScopeFactory na camada de aplicação (só abstrações). -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13" />
   </ItemGroup>
 </Project>

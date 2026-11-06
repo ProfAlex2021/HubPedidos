@@ -84,6 +84,9 @@ namespace HubPedidos.Infrastructure.Persistencia.Migracoes
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ProcessadoEmUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Processador")
                         .IsRequired()
                         .HasMaxLength(60)

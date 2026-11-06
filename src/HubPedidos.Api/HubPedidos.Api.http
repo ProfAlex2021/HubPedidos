@@ -117,3 +117,12 @@ POST {{HubPedidos_HostAddress}}/api/pedidos/{{criado.response.body.$.id}}/cancel
 
 ### Roteiro 3 - identificador inválido -> 400 (TryParse do PedidoId)
 GET {{HubPedidos_HostAddress}}/api/pedidos/nao-e-um-guid
+
+### Roteiro 4 - produtor interativo (TryWrite): 202 Accepted, ou 429 + Retry-After com a fila cheia
+POST {{HubPedidos_HostAddress}}/api/pedidos/{{criado.response.body.$.id}}/processamento
+
+### Roteiro 4 - produtor em lote (WriteAsync): aguarda espaço na fila (backpressure)
+POST {{HubPedidos_HostAddress}}/api/processamento/pendentes?limite=150
+
+### Roteiro 4 - métricas: profundidade, aceitos, rejeitados, descartados, processados, espera, pico no banco
+GET {{HubPedidos_HostAddress}}/api/processamento/metricas

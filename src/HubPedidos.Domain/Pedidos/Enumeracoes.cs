@@ -23,6 +23,9 @@ public enum SituacaoPedido
 {
     Recebido = 1,
     Cancelado = 2,
+
+    /// <summary>Roteiro 4: processado pelo worker a partir da fila.</summary>
+    Processado = 3,
 }
 
 /// <summary>

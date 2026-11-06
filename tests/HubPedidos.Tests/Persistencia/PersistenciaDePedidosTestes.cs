@@ -17,7 +17,10 @@ public sealed class PersistenciaDePedidosTestes
         using var banco = new BancoDeTeste();
         using var contexto = banco.CriarContexto();
 
-        CollectionAssert.AreEqual(new[] { "Inicial" }, contexto.Database.GetAppliedMigrations().Select(m => m.Split('_', 2)[1]).ToArray());
+        // Todas as migrations do assembly foram aplicadas em ordem, e nenhuma ficou pendente.
+        CollectionAssert.AreEqual(contexto.Database.GetMigrations().ToArray(), contexto.Database.GetAppliedMigrations().ToArray());
+        Assert.IsEmpty(contexto.Database.GetPendingMigrations());
+        StringAssert.EndsWith(contexto.Database.GetMigrations().First(), "_Inicial");
         // Se alguém mudar o modelo e esquecer a migration, este teste falha.
         Assert.IsFalse(contexto.Database.HasPendingModelChanges());
     }

@@ -40,6 +40,7 @@ A API escuta em `http://localhost:5080`. As requisições de exemplo estão em
 | 1 | Pattern matching, atributos, reflexão controlada, records e DTOs imutáveis | [roteiro-01](docs/roteiros/roteiro-01.md) | `roteiro-01` |
 | 2 | Span<T>, Memory<T>, pooling e caminhos críticos limitados por E/S e medidos | [roteiro-02](docs/roteiros/roteiro-02.md) | `roteiro-02` |
 | 3 | Consultas previsíveis, projeções, tracking, consultas compiladas e JSON | [roteiro-03](docs/roteiros/roteiro-03.md) | `roteiro-03` |
+| 4 | Channels, SemaphoreSlim, coleções concorrentes e backpressure | [roteiro-04](docs/roteiros/roteiro-04.md) | `roteiro-04` |
 
 ## Estrutura
 

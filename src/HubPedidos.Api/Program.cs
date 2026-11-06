@@ -2,8 +2,10 @@ using HubPedidos.Api.Endpoints;
 using HubPedidos.Application.Importacao;
 using HubPedidos.Application.Pedidos;
 using HubPedidos.Application.Processamento;
+using HubPedidos.Application.Processamento.Fila;
 using HubPedidos.Infrastructure.Consultas;
 using HubPedidos.Infrastructure.Persistencia;
+using HubPedidos.Infrastructure.Processamento;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +40,22 @@ builder.Services.AddDbContext<ContextoDePedidos>(opcoes => opcoes.UseSqlite(conn
 builder.Services.AddScoped<RepositorioDePedidos>();
 builder.Services.AddScoped<ConsultasDePedidos>();
 
+// Roteiro 4: fila limitada, consumidores e limite de acesso ao banco.
+// Singletons: estado compartilhado por todas as requisições e consumidores.
+// O processamento de cada item é scoped (um escopo por item, com seu DbContext).
+var opcoesDaFila = builder.Configuration.GetSection("Fila").Get<OpcoesDaFila>() ?? new OpcoesDaFila();
+opcoesDaFila.Validar();
+builder.Services.AddSingleton(opcoesDaFila);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<MetricasDoProcessamento>();
+builder.Services.AddSingleton<FilaDeProcessamento>();
+builder.Services.AddSingleton(_ => new LimitadorDeAcessoAoBanco(opcoesDaFila.LimiteDeAcessoAoBanco));
+builder.Services.AddScoped<IProcessamentoDePedido, ProcessamentoDePedidoEfCore>();
+builder.Services.AddHostedService<ProcessadorDePedidosWorker>();
+// Prazo para drenar a fila no encerramento; depois dele o cancelamento é forçado.
+builder.Services.Configure<HostOptions>(opcoes =>
+    opcoes.ShutdownTimeout = TimeSpan.FromSeconds(builder.Configuration.GetValue("Fila:PrazoDeEncerramentoEmSegundos", 15)));
+
 var app = builder.Build();
 
 // Resolve o catálogo antes de aceitar requisições: uma configuração inválida
@@ -67,6 +85,7 @@ app.UseStatusCodePages();
 
 app.MapPedidosEndpoints();
 app.MapProcessadoresEndpoints();
+app.MapProcessamentoEndpoints();
 
 await app.RunAsync();
 
